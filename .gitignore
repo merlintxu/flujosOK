@@ -4,3 +4,4 @@ storage/
 .idea/
 .vscode/
 node_modules/
+.phpunit.result.cache
