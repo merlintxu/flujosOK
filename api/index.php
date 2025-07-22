@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Configuración básica
 define('API_ROOT', __DIR__);
 define('PROJECT_ROOT', dirname(__DIR__));
+require_once PROJECT_ROOT . '/bootstrap/env.php';
 
 // Autoloader
 spl_autoload_register(function ($class) {
@@ -68,7 +69,7 @@ class FlujosApi
     private function initializeServices()
     {
         try {
-            $this->config = \\FlujosDimension\\Core\\Config::getInstance();
+            $this->config = FlujosDimension\Core\Config::getInstance();
             $this->jwt = new JWT();
             $this->apiService = new ApiService();
             

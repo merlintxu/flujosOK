@@ -34,46 +34,20 @@ class Config
      */
     public function loadEnvironmentVariables()
     {
-        $envFile = dirname(__DIR__, 2) . '/.env';
-        
-        if (!file_exists($envFile)) {
-            $this->logWarning(".env file not found at: $envFile");
-            return false;
-        }
-        
-        try {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            
-            foreach ($lines as $line) {
-                // Ignorar comentarios
-                if (strpos(trim($line), '#') === 0) {
-                    continue;
-                }
-                
-                // Procesar líneas con formato KEY=VALUE
-                if (strpos($line, '=') !== false) {
-                    list($key, $value) = explode('=', $line, 2);
-                    $key = trim($key);
-                    $value = trim($value);
-                    
-                    // Remover comillas si existen
-                    $value = trim($value, '"\'');
-                    
-                    // Establecer variable de entorno
-                    putenv("$key=$value");
-                    $_ENV[$key] = $value;
-                    $this->config[$key] = $value;
-                }
-            }
-            
-            $this->envLoaded = true;
-            $this->logInfo("Environment variables loaded successfully. Total: " . count($this->config));
+        if ($this->envLoaded) {
             return true;
-            
-        } catch (Exception $e) {
-            $this->logError("Error loading .env file: " . $e->getMessage());
-            return false;
         }
+
+        // Load via Dotenv bootstrap
+        $bootstrap = dirname(__DIR__, 2) . '/bootstrap/env.php';
+        if (file_exists($bootstrap)) {
+            require_once $bootstrap;
+        }
+
+        $this->config = array_merge($this->config, $_ENV);
+        $this->envLoaded = true;
+        $this->logInfo('Environment variables loaded via Dotenv. Total: ' . count($this->config));
+        return true;
     }
     
     /**

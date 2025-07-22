@@ -16,6 +16,7 @@ composer install
 cp .env.example .env
 # Edit `.env` and set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASS`
 # along with your API credentials
+# Entry scripts load `bootstrap/env.php` to expose these variables
 php -S localhost:8000 -t public
 ```
 

@@ -14,6 +14,7 @@ ini_set('log_errors', 1);
 date_default_timezone_set('Europe/Madrid');
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../bootstrap/env.php';
 
 use FlujosDimension\Core\Application;
 

@@ -11,16 +11,7 @@ ini_set('log_errors', 1);
 use FlujosDimension\Core\Config;
 use FlujosDimension\Core\Database;
 use FlujosDimension\Core\JWT;
-/* ---------- Carga .env ---------- */
-$envFile = dirname(__DIR__) . '/.env';
-if (file_exists($envFile)) {
-    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if ($line && $line[0] !== '#') {
-            [$k, $v] = explode('=', $line, 2);
-            $_ENV[trim($k)] = trim($v);
-        }
-    }
-}
+require_once dirname(__DIR__) . '/bootstrap/env.php';
 
 $requiredEnv = ['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS'];
 foreach ($requiredEnv as $key) {
