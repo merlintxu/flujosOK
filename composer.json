@@ -1,0 +1,47 @@
+{
+  "name": "flujosdimension/telephony-sync",
+  "description": "Automatización Ringover + OpenAI + Pipedrive",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": "^8.2",
+    "guzzlehttp/guzzle": "^7.9",
+    "monolog/monolog": "^3.9",
+    "vlucas/phpdotenv": "^5.6",
+    "symfony/http-foundation": "^7.3",
+    "symfony/console": "^7.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "FlujosDimension\\": "app/",
+      "App\\": "app/"
+    },
+    "files": [
+      "app/helpers.php"
+    ],
+    "classmap": [
+      "app/Core/Config.php",
+      "app/Core/Database.php",
+      "app/Core/JWT.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "composer dump-autoload -o"
+    ],
+    "post-update-cmd": [
+      "composer dump-autoload -o"
+    ]
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "optimize-autoloader": true,
+    "platform": { "php": "8.2.0" }
+  }
+}
