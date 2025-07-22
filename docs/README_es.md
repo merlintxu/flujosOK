@@ -12,7 +12,8 @@ Flujos Dimension sincroniza llamadas de Ringover y analiza las grabaciones con O
 ## Instalación rápida
 
 1. Ejecuta `composer install` para descargar las dependencias.
-2. Copia `.env.example` a `.env` y ajusta tus credenciales.
+2. Copia `.env.example` a `.env` y configura `DB_HOST`, `DB_PORT`, `DB_NAME`,
+   `DB_USER` y `DB_PASS`, además de tus tokens de API.
 3. Importa `database/flujodimen_db.sql` en tu servidor MySQL/MariaDB.
 4. Inicia el servidor con `php -S localhost:8000 -t public`.
 
