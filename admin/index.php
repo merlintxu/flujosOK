@@ -8,9 +8,6 @@ define('ADMIN_ACCESS', true);
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-use FlujosDimension\Core\Config;
-use FlujosDimension\Core\Database;
-use FlujosDimension\Core\JWT;
 /* ---------- Carga .env ---------- */
 $envFile = dirname(__DIR__) . '/.env';
 if (file_exists($envFile)) {
