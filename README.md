@@ -20,6 +20,15 @@ php -S localhost:8000 -t public
 
 More detailed steps are available in [docs/INSTALL.md](docs/INSTALL.md).
 
+## Deployment
+
+The deployment workflow uploads the application to the production server via FTP. Configure these secrets in your repository:
+- `FTP_SERVER`
+- `FTP_USERNAME`
+- `FTP_PASSWORD`
+
+Optional: `FTP_PORT` or `FTP_SERVER_DIR` if you need to override defaults.
+
 ## Documentation
 
 - [Installation guide](docs/INSTALL.md)
