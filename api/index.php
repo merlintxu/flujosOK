@@ -68,9 +68,9 @@ class FlujosApi
     private function initializeServices()
     {
         try {
-            $this->config = \\FlujosDimension\\Core\\Config::getInstance();
-            $this->jwt = new JWT();
-            $this->apiService = new ApiService();
+            $this->config = \FlujosDimension\Core\Config::getInstance();
+            $this->jwt = new \FlujosDimension\Core\JWT();
+            $this->apiService = new \FlujosDimension\Services\ApiService();
             
         } catch (Exception $e) {
             $this->sendError('Service initialization failed: ' . $e->getMessage(), 500);
