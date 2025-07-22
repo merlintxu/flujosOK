@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Infrastructure\Http;
+namespace FlujosDimension\Infrastructure\Http;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

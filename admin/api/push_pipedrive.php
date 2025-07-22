@@ -8,8 +8,8 @@ use FlujosDimension\Core\JWT;
 
 header('Content-Type: application/json');
 
-use App\Services\PipedriveService;
-use App\Repositories\CallRepository;
+use FlujosDimension\Services\PipedriveService;
+use FlujosDimension\Repositories\CallRepository;
 
 /** @var PipedriveService $crm */
 $crm  = $container->resolve(PipedriveService::class);

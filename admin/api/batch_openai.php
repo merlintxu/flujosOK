@@ -8,7 +8,7 @@ use FlujosDimension\Core\JWT;
 
 header('Content-Type: application/json');
 
-use App\Services\AnalyticsService;
+use FlujosDimension\Services\AnalyticsService;
 
 /** @var AnalyticsService $ai */
 $ai = $container->resolve('analyticsService');

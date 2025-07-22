@@ -63,4 +63,24 @@ class RingoverService
             }
         } while ($uri);
     }
+
+    /**
+     * Download a recording URL into storage/recordings.
+     * @return string Local path
+     */
+    public function downloadRecording(string $url, string $dir = 'storage/recordings'): string
+    {
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $resp = $this->http->request('GET', $url, ['headers' => ['Authorization' => $this->apiKey]]);
+        if ($resp->getStatusCode() !== 200) {
+            throw new RuntimeException('Failed to download recording');
+        }
+
+        $filename = $dir . '/' . basename(parse_url($url, PHP_URL_PATH));
+        file_put_contents($filename, (string) $resp->getBody());
+        return $filename;
+    }
 }

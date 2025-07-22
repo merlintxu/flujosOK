@@ -22,13 +22,21 @@ if (file_exists($envFile)) {
     }
 }
 
+$requiredEnv = ['DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD'];
+foreach ($requiredEnv as $key) {
+    if (empty($_ENV[$key])) {
+        http_response_code(500);
+        die("Missing environment variable $key");
+    }
+}
+
 /* ---------- Config DB ---------- */
 $dbConfig = [
-    'host'     => $_ENV['DB_HOST']     ?? 'localhost',
-    'port'     => $_ENV['DB_PORT']     ?? '3306',
-    'database' => $_ENV['DB_DATABASE'] ?? 'flujo_dimen_db',
-    'username' => $_ENV['DB_USERNAME'] ?? 'flujodime_user',
-    'password' => $_ENV['DB_PASSWORD'] ?? 'RCuaM1/4%6/5'
+    'host'     => $_ENV['DB_HOST'],
+    'port'     => $_ENV['DB_PORT'],
+    'database' => $_ENV['DB_DATABASE'],
+    'username' => $_ENV['DB_USERNAME'],
+    'password' => $_ENV['DB_PASSWORD']
 ];
 
 /* ---------- Helpers ---------- */

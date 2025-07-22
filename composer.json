@@ -13,8 +13,7 @@
   },
   "autoload": {
     "psr-4": {
-      "FlujosDimension\\": "app/",
-      "App\\": "app/"
+      "FlujosDimension\\": "app/"
     },
     "files": [
       "app/helpers.php"

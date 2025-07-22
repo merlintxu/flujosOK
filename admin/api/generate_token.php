@@ -32,7 +32,12 @@ $seconds  = match($duration){
     default => null               // indefinido
 };
 
-$secret = $_ENV['JWT_SECRET'] ?? 'default-secret';
+$secret = $_ENV['JWT_SECRET'] ?? '';
+if ($secret === '') {
+    http_response_code(500);
+    echo json_encode(['success'=>false,'message'=>'JWT_SECRET not configured']);
+    exit;
+}
 $token  = generateJWT(['name'=>$name,'type'=>'api_access'], $secret, $seconds? time()+$seconds : null);
 
 try {

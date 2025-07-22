@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace FlujosDimension\Controllers;
 
-use App\Http\ProblemDetails;
-use App\Services\AnalyticsService;
-use App\Services\RingoverService;
-use App\Services\PipedriveService;
+use FlujosDimension\Http\ProblemDetails;
+use FlujosDimension\Services\AnalyticsService;
+use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Services\PipedriveService;
 use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
