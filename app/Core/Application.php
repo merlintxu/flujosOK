@@ -31,22 +31,10 @@ class Application
      */
     private function loadConfiguration(): void
     {
-        $envFile = dirname(__DIR__, 2) . '/.env';
-        $this->config = [];
-        
-        if (file_exists($envFile)) {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                if (strpos($line, '#') === 0) continue;
-                if (strpos($line, '=') !== false) {
-                    list($key, $value) = explode('=', $line, 2);
-                    $this->config[trim($key)] = trim($value);
-                    putenv(trim($key) . '=' . trim($value));
-                }
-            }
-        }
-        
-        // Configuraciones por defecto
+        // Cargar variables de entorno desde bootstrap
+        require_once dirname(__DIR__, 2) . '/bootstrap/env.php';
+
+        // Valores por defecto
         $defaults = [
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
@@ -55,16 +43,13 @@ class Application
             'DB_PORT' => '3306',
             'JWT_EXPIRATION_HOURS' => '24'
         ];
-        
-        foreach ($defaults as $key => $value) {
-            if (!isset($this->config[$key])) {
-                $this->config[$key] = $value;
-                putenv("$key=$value");
-            }
-        }
-        
+
+        // Mezclar $_ENV con los valores por defecto
+        $this->config = array_merge($defaults, $_ENV);
+
         // Configurar zona horaria
         date_default_timezone_set($this->config['TIMEZONE']);
+
     }
     
     /**
