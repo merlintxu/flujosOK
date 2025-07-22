@@ -17,3 +17,11 @@ cp .env.example .env
    php -S localhost:8000 -t public
    ```
 5. Visit `http://localhost:8000` to access the API. The admin panel is available in the `admin/` directory.
+6. **Review log files** stored in `storage/logs/`.
+   Log files rotate automatically once they reach 10&nbsp;MB (older files may be compressed if gzip is available).
+   Inspect them in real time with:
+   ```bash
+   tail -f storage/logs/application.log
+   tail -f storage/logs/error.log
+   ```
+   You can periodically clean old rotated logs using `Logger::cleanOldLogs()`.
