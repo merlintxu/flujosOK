@@ -4,7 +4,7 @@ declare(strict_types=1);
 use FlujosDimension\Core\Container;
 use FlujosDimension\Core\Config;
 use FlujosDimension\Core\Database;
-use App\Infrastructure\Http\HttpClient;
+use FlujosDimension\Infrastructure\Http\HttpClient;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Services\{RingoverService, OpenAIService, PipedriveService, AnalyticsService};
 

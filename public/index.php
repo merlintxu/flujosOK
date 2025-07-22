@@ -13,36 +13,7 @@ ini_set('log_errors', 1);
 // Configuración de zona horaria
 date_default_timezone_set('Europe/Madrid');
 
-// Autoloader simple para las clases
-spl_autoload_register(function ($class) {
-    // Convertir namespace a ruta de archivo
-    $prefix = 'FlujosDimension\\';
-    $baseDir = __DIR__ . '/../app/';
-    
-    // Verificar si la clase usa nuestro namespace
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
-    
-    // Obtener el nombre relativo de la clase
-    $relativeClass = substr($class, $len);
-    
-    // Reemplazar namespace separators con directory separators
-    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
-    
-    // Si el archivo existe, incluirlo
-    if (file_exists($file)) {
-        require $file;
-    }
-});
-
-// Incluir clases adicionales necesarias
-require_once __DIR__ . '/../app/Core/Request.php';
-require_once __DIR__ . '/../app/Core/Response.php';
-require_once __DIR__ . '/../app/Core/Router.php';
-require_once __DIR__ . '/../app/Core/ErrorHandler.php';
-require_once __DIR__ . '/../app/Core/CacheManager.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use FlujosDimension\Core\Application;
 

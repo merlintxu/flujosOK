@@ -51,4 +51,38 @@ final class CallRepository
         }
         $this->db->commit();
     }
+
+    /** Insert a call if ringover_id not present */
+    public function insertOrIgnore(array $call): void
+    {
+        $sql = 'INSERT IGNORE INTO calls (ringover_id, phone_number, direction, status, duration, recording_url, created_at) '
+             . 'VALUES (:ringover_id, :phone_number, :direction, :status, :duration, :recording_url, :created_at)';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':ringover_id'  => $call['id']          ?? null,
+            ':phone_number' => $call['phone_number'] ?? null,
+            ':direction'    => $call['direction']    ?? 'inbound',
+            ':status'       => $call['status']       ?? 'pending',
+            ':duration'     => $call['duration']     ?? 0,
+            ':recording_url'=> $call['recording_url']?? null,
+            ':created_at'   => $call['start_time']   ?? date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /** Return calls not yet synced with CRM */
+    public function callsNotInCrm(): array
+    {
+        $sql = 'SELECT * FROM calls WHERE crm_synced = 0 ORDER BY created_at ASC';
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Mark a call as synced to CRM */
+    public function markCrmSynced(int $id, int $dealId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE calls SET crm_synced = 1, pipedrive_deal_id = :dealId WHERE id = :id'
+        );
+        $stmt->execute([':dealId' => $dealId, ':id' => $id]);
+    }
 }

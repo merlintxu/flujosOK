@@ -95,37 +95,37 @@ private function registerServices(): void
 
     /* ---------- Logger ---------- */
     $this->container->bind('logger', fn () =>
-        new \App\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')
+        new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')
     );
 
     /* ---------- HttpClient (Guzzle + retry) ---------- */
     $this->container->bind(
-        \App\Infrastructure\Http\HttpClient::class,
-        fn () => new \App\Infrastructure\Http\HttpClient()
+        \FlujosDimension\Infrastructure\Http\HttpClient::class,
+        fn () => new \FlujosDimension\Infrastructure\Http\HttpClient()
     );
     // Alias corto por si te resulta práctico
     $this->container->alias(
-        \App\Infrastructure\Http\HttpClient::class,
+        \FlujosDimension\Infrastructure\Http\HttpClient::class,
         'httpClient'
     );
 
     /* ---------- Repositorios ---------- */
     $this->container->bind(
-        \App\Repositories\CallRepository::class,
-        fn ($c) => new \App\Repositories\CallRepository(
+        \FlujosDimension\Repositories\CallRepository::class,
+        fn ($c) => new \FlujosDimension\Repositories\CallRepository(
             $c->resolve(PDO::class)
         )
     );
     $this->container->alias(
-        \App\Repositories\CallRepository::class,
+        \FlujosDimension\Repositories\CallRepository::class,
         'callRepository'
     );
 
     /* ---------- Integraciones externas ---------- */
     // OpenAI
     $this->container->bind(
-        \App\Services\OpenAIService::class,
-        fn ($c) => new \App\Services\OpenAIService(
+        \FlujosDimension\Services\OpenAIService::class,
+        fn ($c) => new \FlujosDimension\Services\OpenAIService(
             $c->resolve('httpClient'),
             $this->config['OPENAI_API_KEY']
         )
@@ -133,8 +133,8 @@ private function registerServices(): void
 
     // Pipedrive
     $this->container->bind(
-        \App\Services\PipedriveService::class,
-        fn ($c) => new \App\Services\PipedriveService(
+        \FlujosDimension\Services\PipedriveService::class,
+        fn ($c) => new \FlujosDimension\Services\PipedriveService(
             $c->resolve('httpClient'),
             $this->config['PIPEDRIVE_API_TOKEN']
         )
@@ -142,20 +142,20 @@ private function registerServices(): void
 
     // Ringover
     $this->container->bind(
-        \App\Services\RingoverService::class,
-        fn ($c) => new \App\Services\RingoverService($c)   // usa Container internamente
+        \FlujosDimension\Services\RingoverService::class,
+        fn ($c) => new \FlujosDimension\Services\RingoverService($c)   // usa Container internamente
     );
 
     /* ---------- Servicios de dominio ---------- */
     $this->container->bind(
-        \App\Services\AnalyticsService::class,            // <- ruta exacta: app\Services\AnalyticsService.php
-        fn ($c) => new \App\Services\AnalyticsService(
+        \FlujosDimension\Services\AnalyticsService::class,            // <- ruta exacta: app\Services\AnalyticsService.php
+        fn ($c) => new \FlujosDimension\Services\AnalyticsService(
             $c->resolve('callRepository'),
-            $c->resolve(\App\Services\OpenAIService::class)
+            $c->resolve(\FlujosDimension\Services\OpenAIService::class)
         )
     );
     $this->container->alias(
-        \App\Services\AnalyticsService::class,
+        \FlujosDimension\Services\AnalyticsService::class,
         'analyticsService'
     );
 }

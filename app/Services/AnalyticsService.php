@@ -7,6 +7,8 @@ use FlujosDimension\Repositories\CallRepository;
 
 final class AnalyticsService
 {
+    private int $lastProcessed = 0;
+
     public function __construct(
         private readonly CallRepository $repo,
         private readonly OpenAIService  $openai
@@ -19,6 +21,7 @@ final class AnalyticsService
     {
         $pending = $this->repo->pending($max);
         if ($pending === []) {
+            $this->lastProcessed = 0;
             return;
         }
 
@@ -34,5 +37,11 @@ final class AnalyticsService
         $resp = $this->openai->chat($messages, ['temperature' => 0.3]);
 
         $this->repo->saveBatch($pending, $resp['choices']);
+        $this->lastProcessed = count($pending);
+    }
+
+    public function lastProcessed(): int
+    {
+        return $this->lastProcessed;
     }
 }

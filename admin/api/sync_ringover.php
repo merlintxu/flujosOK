@@ -8,8 +8,8 @@ use FlujosDimension\Core\JWT;
 
 header('Content-Type: application/json');
 
-use App\Services\RingoverService;
-use App\Repositories\CallRepository;
+use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Repositories\CallRepository;
 
 /** @var RingoverService $ringover */
 $ringover = $container->resolve(RingoverService::class);
