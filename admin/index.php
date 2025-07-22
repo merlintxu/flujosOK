@@ -22,7 +22,7 @@ if (file_exists($envFile)) {
     }
 }
 
-$requiredEnv = ['DB_HOST','DB_PORT','DB_DATABASE','DB_USERNAME','DB_PASSWORD'];
+$requiredEnv = ['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS'];
 foreach ($requiredEnv as $key) {
     if (empty($_ENV[$key])) {
         http_response_code(500);
@@ -34,9 +34,9 @@ foreach ($requiredEnv as $key) {
 $dbConfig = [
     'host'     => $_ENV['DB_HOST'],
     'port'     => $_ENV['DB_PORT'],
-    'database' => $_ENV['DB_DATABASE'],
-    'username' => $_ENV['DB_USERNAME'],
-    'password' => $_ENV['DB_PASSWORD']
+    'database' => $_ENV['DB_NAME'],
+    'username' => $_ENV['DB_USER'],
+    'password' => $_ENV['DB_PASS']
 ];
 
 /* ---------- Helpers ---------- */

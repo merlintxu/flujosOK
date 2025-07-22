@@ -14,7 +14,8 @@ This project automates the synchronization of Ringover calls with OpenAI process
 ```bash
 composer install
 cp .env.example .env
-# Edit .env with your database and API credentials
+# Edit `.env` and set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASS`
+# along with your API credentials
 php -S localhost:8000 -t public
 ```
 
