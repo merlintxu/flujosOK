@@ -27,7 +27,7 @@ $container->alias(HttpClient::class, 'httpClient');
 
 /* ---------- Repos ---------- */
 $container->singleton(CallRepository::class,
-    fn ($c) => new CallRepository($c->resolve(PDO::class))
+    fn () => new CallRepository(Database::getInstance()->getConnection())
 );
 $container->alias(CallRepository::class, 'callRepository');
 
