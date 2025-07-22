@@ -20,7 +20,12 @@ $pending = $repo->callsNotInCrm();   // SELECT * WHERE crm_synced=0
 $created = 0;
 
 foreach ($pending as $c) {
-    $personId = $crm->findPersonByPhone($c['phone_number']) ?? null;
+    // Skip Pipedrive person search when no phone number is available
+    if (!empty($c['phone_number'])) {
+        $personId = $crm->findPersonByPhone($c['phone_number']) ?? null;
+    } else {
+        $personId = null;
+    }
     $dealId   = $crm->createOrUpdateDeal([
         'title'     => 'Call '.$c['id'],
         'value'     => 0,
