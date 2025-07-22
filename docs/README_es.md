@@ -1,0 +1,19 @@
+# Documentación del Proyecto
+
+Flujos Dimension sincroniza llamadas de Ringover y analiza las grabaciones con OpenAI para integrarlas posteriormente en Pipedrive. La aplicación está escrita en PHP 8.2 y cuenta con un panel de administración opcional.
+
+## Características
+
+- Importación de llamadas de Ringover.
+- Procesamiento de audios mediante OpenAI y almacenamiento en base de datos.
+- Envío de resultados a Pipedrive como oportunidades.
+- API REST autenticada con JWT y endpoints de salud.
+
+## Instalación rápida
+
+1. Ejecuta `composer install` para descargar las dependencias.
+2. Copia `.env.example` a `.env` y ajusta tus credenciales.
+3. Importa `database/flujodimen_db.sql` en tu servidor MySQL/MariaDB.
+4. Inicia el servidor con `php -S localhost:8000 -t public`.
+
+Consulta [docs/INSTALL.md](INSTALL.md) para más detalles en inglés.
