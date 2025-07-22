@@ -33,8 +33,8 @@ final class CallController
                 $new++;
             }
 
-            // procesa TODO lo pendiente, máx 50
-            $this->analytics->processPendingCallsBatch(50);
+            // Procesa un máximo de 50 llamadas pendientes
+            $this->analytics->processBatch(50);
 
             return new JsonResponse(['inserted' => $new, 'status' => 'ok'], 200);
         } catch (\Throwable $e) {
