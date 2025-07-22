@@ -17,7 +17,7 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit
       - name: Upload via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
