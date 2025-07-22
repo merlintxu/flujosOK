@@ -16,7 +16,7 @@ $container = new Container();
 /* ---------- config & PDO ---------- */
 $cfg = Config::getInstance();
 $container->bind(Config::class, fn () => $cfg);
-$container->bind(PDO::class, fn () => Database::getInstance());
+$container->bind(PDO::class, fn () => Database::getInstance()->getConnection());
 
 
 /* ---------- HTTP ---------- */
