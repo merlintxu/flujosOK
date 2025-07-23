@@ -33,35 +33,24 @@ class RingoverService
     public function getCalls(\DateTimeInterface $since): Generator
     {
         $uri   = "{$this->baseUrl}/calls";
-        $limit = 1000;
-        $offset = 0;
+        $query = [
+            'date_start' => $since->format('Y-m-d\TH:i:sP'),
+            'limit_count' => 1000
+        ];
 
-        do {
-            $query = [
-                'date_start' => $since->format('Y-m-d\TH:i:sP'),
-                'limit_count' => $limit,
-                'limit_offset' => $offset,
-            ];
+        $resp = $this->http->request('GET', $uri, [
+            'headers' => ['Authorization' => $this->apiKey],
+            'query'   => $query,
+        ]);
 
-            $resp = $this->http->request('GET', $uri, [
-                'headers' => ['Authorization' => $this->apiKey],
-                'query'   => $query,
-            ]);
+        if ($resp->getStatusCode() !== 200) {
+            throw new RuntimeException("Ringover error: {$resp->getStatusCode()}");
+        }
 
-            if ($resp->getStatusCode() !== 200) {
-                throw new RuntimeException("Ringover error: {$resp->getStatusCode()}");
-            }
-
-            $body = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
-            $calls = $body['data'] ?? [];
-
-            foreach ($calls as $call) {
-                yield $call;
-            }
-
-            $count = count($calls);
-            $offset += $limit;
-        } while ($count === $limit);
+        $body = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        foreach (($body['data'] ?? []) as $call) {
+            yield $call;
+        }
     }
 
     /**
