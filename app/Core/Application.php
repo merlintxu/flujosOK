@@ -77,6 +77,8 @@ private function registerServices(): void
 
     // Conexión PDO única
     $this->container->bind(PDO::class, fn () => $this->getDatabaseConnection());
+    // Alias para acceder a la base de datos por nombre
+    $this->container->alias(PDO::class, 'database');
 
     /* ---------- Logger ---------- */
     $this->container->bind('logger', fn () =>
