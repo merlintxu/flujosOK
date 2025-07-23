@@ -43,6 +43,12 @@ class RingoverService
                 'limit_offset' => $offset,
             ];
 
+            // Volcado temporal para depuración
+            file_put_contents(__DIR__ . '/../../../../ringover_debug.log',
+                "TOKEN: [{$this->apiKey}]\nQUERY: " . var_export($query, true) . "\n",
+                FILE_APPEND
+            );
+
             $resp = $this->http->request('GET', $uri, [
                 'headers' => ['Authorization' => $this->apiKey],
                 'query'   => $query,
