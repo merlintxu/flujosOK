@@ -91,6 +91,21 @@ function getHttpCode(string $url, array $headers=[]): int {
     curl_exec($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch); return $code;
 }
 
+/* ---------- Peticiones AJAX ---------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+    if (($_POST['action'] ?? '') === 'check_api_status') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'apis' => apiHealth()]);
+        exit;
+    }
+}
+
 $stats       = statsToday();
 $calls       = recentCalls();
 $apisStatus  = apiHealth();
@@ -447,12 +462,12 @@ $apisStatus  = apiHealth();
         <table class="calls-table"><thead><tr><th>Fecha</th><th>Teléfono</th><th>Dir.</th><th>Estado</th><th>Dur.</th><th>AI</th></tr></thead>
         <tbody id="tbody-recent"><?php foreach($calls as $c):?>
         <tr>
-            <td><?=date('d/m H:i',strtotime($c['created_at']))?></td>
-            <td><?=$c['phone_number']?></td>
-            <td><?=ucfirst($c['direction'])?></td>
-            <td><?=$c['status']?></td>
-            <td><?=gmdate('i:s',$c['duration'])?></td>
-            <td><?=$c['ai_sentiment']??'-'?></td>
+            <td><?=date('d/m H:i', strtotime($c['created_at']))?></td>
+            <td><?=htmlspecialchars($c['phone_number'])?></td>
+            <td><?=htmlspecialchars(ucfirst($c['direction']))?></td>
+            <td><?=htmlspecialchars($c['status'])?></td>
+            <td><?=gmdate('i:s', $c['duration'])?></td>
+            <td><?=htmlspecialchars($c['ai_sentiment'] ?? '-')?></td>
         </tr><?php endforeach;?></tbody></table>
 
         <!-- SINCRONIZACIONES -->
