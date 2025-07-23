@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 require_once dirname(__DIR__) . '/bootstrap/env.php';
 
+
 $error = '';
 
 if (isset($_GET['action']) && $_GET['action'] === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
