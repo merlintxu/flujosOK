@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FlujosDimension\Core;
 
-use FlujosDimension\Core\{Config,Database,JWT};
+use FlujosDimension\Core\{Config,Database,JWT,CacheManager};
 /**
  * Aplicación Principal - Flujos Dimension v4.2
  * Migrado y mejorado desde v3
@@ -84,6 +84,16 @@ private function registerServices(): void
     $this->container->bind('logger', fn () =>
         new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')
     );
+
+    /* ---------- JWT Service ---------- */
+    $this->container->bind(JWT::class, fn () => new JWT());
+    $this->container->alias(JWT::class, 'jwtService');
+
+    /* ---------- Cache Manager ---------- */
+    $this->container->bind(CacheManager::class, fn () =>
+        new CacheManager(dirname(__DIR__, 2) . '/storage/cache')
+    );
+    $this->container->alias(CacheManager::class, 'cache');
 
     /* ---------- HttpClient (Guzzle + retry) ---------- */
     $this->container->bind(
