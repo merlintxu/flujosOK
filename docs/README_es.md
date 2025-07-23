@@ -17,4 +17,10 @@ Flujos Dimension sincroniza llamadas de Ringover y analiza las grabaciones con O
 3. Importa `database/flujodimen_db.sql` en tu servidor MySQL/MariaDB.
 4. Inicia el servidor con `php -S localhost:8000 -t public`.
 
+### Acceso al panel de administración
+
+Configura `ADMIN_USER` y `ADMIN_PASS` en tu archivo `.env` y accede a
+`admin/login.php` para iniciar sesión en el panel. Tras autenticarte se genera
+un token CSRF para las peticiones de la interfaz.
+
 Consulta [docs/INSTALL.md](INSTALL.md) para más detalles en inglés.

@@ -19,6 +19,13 @@ cp .env.example .env
 php -S localhost:8000 -t public
 ```
 
+### Admin login
+
+The admin panel located in the `admin/` directory requires session-based
+authentication. Set `ADMIN_USER` and `ADMIN_PASS` in your `.env` file and
+visit `admin/login.php` to sign in. After a successful login a CSRF token is
+available for API requests within the dashboard.
+
 More detailed steps are available in [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Deployment
