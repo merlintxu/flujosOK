@@ -7,6 +7,7 @@
  * @author Manus AI
  */
 namespace FlujosDimension\Core;
+use Exception;
 class JWT
 {
     private $secret;
