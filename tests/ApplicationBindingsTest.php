@@ -4,12 +4,15 @@ namespace Tests;
 use FlujosDimension\Core\Application;
 use FlujosDimension\Core\JWT;
 use FlujosDimension\Core\CacheManager;
+use FlujosDimension\Core\Config;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationBindingsTest extends TestCase
 {
     public function testJwtAndCacheBindings()
     {
+        $config = Config::getInstance();
+        $config->set('JWT_SECRET', 'secret');
         $app = new Application();
         try {
             $this->assertInstanceOf(JWT::class, $app->service(JWT::class));
