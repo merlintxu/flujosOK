@@ -51,7 +51,7 @@ class CacheManager
     
     public function deletePattern(string $pattern): void
     {
-        $files = glob($this->cacheDir . '/' . str_replace('*', '*', $pattern) . '.cache');
+        $files = glob($this->cacheDir . '/' . $pattern . '.cache');
         foreach ($files as $file) {
             unlink($file);
         }
