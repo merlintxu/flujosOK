@@ -193,49 +193,16 @@ private function registerServices(): void
      */
     private function defineRoutes(): void
     {
-        // API Routes
+        // API Routes (only implemented controllers)
         $this->router->group('/api', function($router) {
-            // Status y Health
             $router->get('/status', 'ApiController@status');
             $router->get('/health', 'ApiController@health');
-            
-            // Llamadas
-            $router->get('/calls', 'CallController@index');
-            $router->get('/calls/{id}', 'CallController@show');
-            $router->post('/calls', 'CallController@store');
-            $router->put('/calls/{id}', 'CallController@update');
-            $router->delete('/calls/{id}', 'CallController@destroy');
-            
-            // Sincronización
-            $router->post('/sync/manual', 'SyncController@manual');
-            $router->get('/sync/status', 'SyncController@status');
+
             $router->post('/sync/hourly', 'SyncController@hourly');
-            $router->post('/sync/batch', 'BatchController@process');
-            
-            // Analytics
-            $router->get('/analytics/dashboard', 'AnalyticsController@dashboard');
-            $router->get('/analytics/stats', 'AnalyticsController@stats');
-            $router->get('/analytics/reports', 'ReportController@generate');
-            
-            // Ringover
-            $router->get('/ringover/calls', 'RingoverController@getCalls');
-            $router->get('/ringover/team', 'RingoverController@getTeam');
-            $router->get('/ringover/transcripts', 'RingoverController@getTranscripts');
-            
-            // OpenAI
-            $router->post('/openai/transcribe', 'OpenAIController@transcribe');
-            $router->post('/openai/analyze', 'OpenAIController@analyze');
-            $router->post('/openai/batch', 'OpenAIController@batch');
-            
-            // Tokens JWT
+
             $router->post('/token/generate', 'TokenController@generate');
-            $router->post('/token/validate', 'TokenController@validate');
+            $router->post('/token/validate', 'TokenController@verify');
             $router->delete('/token/revoke', 'TokenController@revoke');
-            
-            // Tests de APIs
-            $router->get('/test/ringover', 'TestController@ringover');
-            $router->get('/test/openai', 'TestController@openai');
-            $router->get('/test/pipedrive', 'TestController@pipedrive');
         });
         
         // Admin Routes
