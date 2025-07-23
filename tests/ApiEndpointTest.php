@@ -8,6 +8,8 @@ use FlujosDimension\Core\Request;
 use FlujosDimension\Controllers\ApiController;
 use FlujosDimension\Controllers\TokenController;
 use FlujosDimension\Controllers\SyncController;
+use FlujosDimension\Controllers\CallsController;
+use FlujosDimension\Controllers\AnalysisController;
 
 class ApiEndpointTest extends TestCase
 {
@@ -58,5 +60,23 @@ class ApiEndpointTest extends TestCase
         $response = $controller->hourly();
         $this->assertSame(200, $response->getStatusCode());
         $this->assertTrue(json_decode($response->getContent(), true)['success']);
+    }
+
+    public function testCallsIndex()
+    {
+        $controller = new CallsController($this->makeContainer(), $this->makeRequest('GET', '/api/v3/calls'));
+        $response = $controller->index();
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertTrue($data['success']);
+    }
+
+    public function testAnalysisProcess()
+    {
+        $controller = new AnalysisController($this->makeContainer(), $this->makeRequest('POST', '/api/v3/analysis/process'));
+        $response = $controller->process();
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertTrue(isset($data['batch_id']));
     }
 }

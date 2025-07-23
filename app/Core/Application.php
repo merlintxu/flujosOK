@@ -193,16 +193,51 @@ private function registerServices(): void
      */
     private function defineRoutes(): void
     {
-        // API Routes (only implemented controllers)
+        // API Routes
         $this->router->group('/api', function($router) {
             $router->get('/status', 'ApiController@status');
             $router->get('/health', 'ApiController@health');
 
-            $router->post('/sync/hourly', 'SyncController@hourly');
+            $router->group('/v3', function($router) {
+                // Calls
+                $router->get('/calls', 'CallsController@index');
+                $router->get('/calls/{id}', 'CallsController@show');
+                $router->post('/calls', 'CallsController@store');
+                $router->put('/calls/{id}', 'CallsController@update');
+                $router->delete('/calls/{id}', 'CallsController@destroy');
 
-            $router->post('/token/generate', 'TokenController@generate');
-            $router->post('/token/validate', 'TokenController@verify');
-            $router->delete('/token/revoke', 'TokenController@revoke');
+                // Analysis
+                $router->post('/analysis/process', 'AnalysisController@process');
+                $router->get('/analysis/batch/{id}', 'AnalysisController@batchStatus');
+                $router->post('/analysis/sentiment/batch', 'AnalysisController@sentimentBatch');
+                $router->get('/analysis/keywords', 'AnalysisController@keywords');
+
+                // Config
+                $router->get('/config', 'ConfigController@index');
+                $router->put('/config/{key}', 'ConfigController@update');
+                $router->post('/config/batch', 'ConfigController@batch');
+
+                // Users
+                $router->get('/users', 'UserController@index');
+                $router->post('/users', 'UserController@create');
+                $router->put('/users/{id}', 'UserController@update');
+                $router->post('/users/{id}/permissions', 'UserController@permissions');
+
+                // Reports
+                $router->post('/reports/generate', 'ReportController@generate');
+                $router->get('/reports/{id}', 'ReportController@status');
+                $router->get('/reports/{id}/download', 'ReportController@download');
+                $router->post('/reports/schedule', 'ReportController@schedule');
+
+                // Webhooks
+                $router->post('/webhooks', 'WebhookController@create');
+
+                // Sync and token
+                $router->post('/sync/hourly', 'SyncController@hourly');
+                $router->post('/token/generate', 'TokenController@generate');
+                $router->post('/token/validate', 'TokenController@verify');
+                $router->delete('/token/revoke', 'TokenController@revoke');
+            });
         });
         
         // Admin Routes
