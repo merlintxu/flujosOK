@@ -171,6 +171,7 @@
         <?php endif; ?>
         
         <form method="POST" action="?action=login">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf ?? ''); ?>">
             <div class="form-group">
                 <label for="username">Usuario</label>
                 <input type="text" id="username" name="username" required autofocus>
