@@ -19,7 +19,7 @@ class Logger
         'critical' => 4
     ];
     
-    public function __construct(string $logDir = null, string $defaultLevel = 'info')
+    public function __construct(?string $logDir = null, string $defaultLevel = 'info')
     {
         $this->logDir = $logDir ?: dirname(__DIR__, 2) . '/storage/logs';
         $this->defaultLevel = $defaultLevel;
@@ -139,7 +139,7 @@ class Logger
     /**
      * Log de sincronización
      */
-    public function sync(string $source, string $action, bool $success, int $recordsProcessed = 0, string $error = null): void
+    public function sync(string $source, string $action, bool $success, int $recordsProcessed = 0, ?string $error = null): void
     {
         $status = $success ? 'SUCCESS' : 'FAILED';
         $message = "Sync {$source} - {$action} - {$status}";
