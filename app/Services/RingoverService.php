@@ -32,15 +32,19 @@ class RingoverService
      */
     public function getCalls(\DateTimeInterface $since): Generator
     {
-        $uri   = "{$this->baseUrl}/calls";
+        $uri   = "{$this->baseUrl}/calls/current";
         $limit = 1000;
         $offset = 0;
 
         do {
-            $params = [
-                'date_start' => $since->format('Y-m-d\TH:i:sP'),
+            $filter = [
                 'limit_count' => $limit,
-                'limit_offset' => $offset,
+                'limit_offset' => $offset
+                // Puedes agregar más filtros aquí si lo deseas
+            ];
+
+            $params = [
+                'current_calls_filter' => $filter
             ];
 
             // Volcado temporal usando Logger
