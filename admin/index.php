@@ -8,6 +8,10 @@ define('ADMIN_ACCESS', true);
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
+require_once __DIR__ . '/auth.php';
+
+requireLogin();
+$csrf = csrfToken();
 /* ---------- Carga .env ---------- */
 $envFile = dirname(__DIR__) . '/.env';
 if (file_exists($envFile)) {
@@ -416,7 +420,12 @@ $apisStatus  = apiHealth();
     </style>
 </head>
 <body>
-<div class="header"><h1>🚀 Flujos Dimension v4.2.1</h1></div>
+<div class="header"><h1>🚀 Flujos Dimension v4.2.1</h1>
+    <div class="user-info">
+        <span>👤 <?=htmlspecialchars($_SESSION['admin_user'] ?? 'admin')?> </span>
+        <a href="logout.php" class="logout-btn">Cerrar Sesión</a>
+    </div>
+</div>
 <div class="container">
     <div class="tabs">
         <button class="tab-btn active" data-tab="dashboard">📞 Dashboard</button>
@@ -485,6 +494,7 @@ $apisStatus  = apiHealth();
 </div>
 
 <script>
+const csrfToken = '<?= $csrf ?>';
 /* --------- Navegación tabs --------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -493,7 +503,12 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* --------- Helper ajax --------- */
-async function post(url,data){const r=await fetch(url,{method:'POST',body:data});return r.json();}
+async function post(url,data){
+  if(!(data instanceof FormData)) data = new FormData(data);
+  data.append('csrf_token', csrfToken);
+  const r=await fetch(url,{method:'POST',body:data});
+  return r.json();
+}
 
 /* --------- Generar token --------- */
 document.getElementById('btn-make-token').onclick=async()=>{

@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../auth.php';
+requireApiAuth();
+
 require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 $container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
 
