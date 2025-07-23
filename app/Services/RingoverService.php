@@ -20,9 +20,9 @@ class RingoverService
     public function __construct(Container $c)
     {
         $this->http    = $c->resolve('httpClient');
-        $config        = $c->resolve('config');
-        $this->apiKey  = $config['RINGOVER_API_TOKEN'] ?? '';
-        $this->baseUrl = $config['RINGOVER_API_URL']  ?? 'https://public-api.ringover.com/v2';
+        $config = $c->resolve(\FlujosDimension\Core\Config::class);
+        $this->apiKey  = $config->get('RINGOVER_API_TOKEN', '');
+        $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
     }
 
     /**
@@ -32,34 +32,27 @@ class RingoverService
      */
     public function getCalls(\DateTimeInterface $since): Generator
     {
-        $uri   = "{$this->baseUrl}/calls/current";
+        $uri   = "{$this->baseUrl}/calls";
         $limit = 1000;
         $offset = 0;
 
         do {
-            $filter = [
+            $query = [
+                'date_start' => $since->format('Y-m-d\TH:i:sP'),
                 'limit_count' => $limit,
-                'limit_offset' => $offset
-                // Puedes agregar más filtros aquí si lo deseas
-            ];
-
-            $params = [
-                'current_calls_filter' => $filter
+                'limit_offset' => $offset,
             ];
 
             // Volcado temporal usando Logger
             $logger = new \FlujosDimension\Core\Logger();
             $logger->debug('Ringover depuración', [
                 'token' => $this->apiKey,
-                'params' => $params
+                'query' => $query
             ]);
 
-            $resp = $this->http->request('POST', $uri, [
-                'headers' => [
-                    'Authorization' => $this->apiKey,
-                    'Content-Type' => 'application/json'
-                ],
-                'body'   => json_encode($params),
+            $resp = $this->http->request('GET', $uri, [
+                'headers' => ['Authorization' => $this->apiKey],
+                'query'   => $query,
             ]);
 
             if ($resp->getStatusCode() !== 200) {

@@ -13,19 +13,11 @@ require_once __DIR__ . '/auth.php';
 requireLogin();
 $csrf = csrfToken();
 /* ---------- Carga .env ---------- */
-$envFile = dirname(__DIR__) . '/.env';
-if (file_exists($envFile)) {
-    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        if ($line && $line[0] !== '#') {
-            [$k, $v] = explode('=', $line, 2);
-            $_ENV[trim($k)] = trim($v);
-        }
-    }
-}
-
+use FlujosDimension\Core\Config;
+$config = Config::getInstance();
 $requiredEnv = ['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS'];
 foreach ($requiredEnv as $key) {
-    if (empty($_ENV[$key])) {
+    if (empty($config->get($key))) {
         http_response_code(500);
         die("Missing environment variable $key");
     }
@@ -33,11 +25,11 @@ foreach ($requiredEnv as $key) {
 
 /* ---------- Config DB ---------- */
 $dbConfig = [
-    'host'     => $_ENV['DB_HOST'],
-    'port'     => $_ENV['DB_PORT'],
-    'database' => $_ENV['DB_NAME'],
-    'username' => $_ENV['DB_USER'],
-    'password' => $_ENV['DB_PASS']
+    'host'     => $config->get('DB_HOST'),
+    'port'     => $config->get('DB_PORT'),
+    'database' => $config->get('DB_NAME'),
+    'username' => $config->get('DB_USER'),
+    'password' => $config->get('DB_PASS')
 ];
 
 /* ---------- Helpers ---------- */

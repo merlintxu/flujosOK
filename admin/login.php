@@ -4,7 +4,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require_once __DIR__ . '/auth.php';
-require_once dirname(__DIR__) . '/bootstrap/env.php';
+
+use FlujosDimension\Core\Config;
+$config = Config::getInstance();
 
 
 $error = '';
@@ -15,8 +17,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'login' && $_SERVER['REQUEST_M
     } else {
         $user = $_POST['username'] ?? '';
         $pass = $_POST['password'] ?? '';
-        $envUser = $_ENV['ADMIN_USER'] ?? 'admin';
-        $envPass = $_ENV['ADMIN_PASS'] ?? 'password';
+        $envUser = $config->get('ADMIN_USER', 'admin');
+        $envPass = $config->get('ADMIN_PASS', 'password');
         if ($user === $envUser && $pass === $envPass) {
             $_SESSION['authenticated'] = true;
             $_SESSION['admin_user'] = $user;
