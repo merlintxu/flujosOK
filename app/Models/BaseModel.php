@@ -154,7 +154,7 @@ abstract class BaseModel
     /**
      * Obtener registros con paginación
      */
-    public function paginate(int $page = 1, int $perPage = 20, string $orderBy = null, string $direction = 'DESC'): array
+    public function paginate(int $page = 1, int $perPage = 20, ?string $orderBy = null, string $direction = 'DESC'): array
     {
         $orderBy = $orderBy ?: $this->primaryKey;
         $direction = strtoupper($direction) === 'ASC' ? 'ASC' : 'DESC';

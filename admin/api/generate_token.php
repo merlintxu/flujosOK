@@ -11,17 +11,6 @@ use FlujosDimension\Core\JWT;
 
 header('Content-Type: application/json');
 
-
-/* ---------- helpers ---------- */
-function generateJWT(array $payload, string $secret, ?int $exp = null): string
-{
-    $header  = base64_encode(json_encode(['typ'=>'JWT','alg'=>'HS256']));
-    $claim   = $payload + ['iat'=>time(),'exp'=>$exp ?? time()+3153600000]; // 100 años por defecto
-    $body    = base64_encode(json_encode($claim));
-    $sig     = base64_encode(hash_hmac('sha256',"$header.$body",$secret,true));
-    return str_replace(['+','/','='], ['-','_',''], "$header.$body.$sig");
-}
-
 /* ---------- lógica ---------- */
 $name     = $_POST['token_name'] ?? 'Token API';
 $duration = $_POST['duration']   ?? 'indefinite';
@@ -35,28 +24,20 @@ $seconds  = match($duration){
     default => null               // indefinido
 };
 
-$secret = $_ENV['JWT_SECRET'] ?? '';
-if ($secret === '') {
-    http_response_code(500);
-    echo json_encode(['success'=>false,'message'=>'JWT_SECRET not configured']);
-    exit;
-}
-$token  = generateJWT(['name'=>$name,'type'=>'api_access'], $secret, $seconds? time()+$seconds : null);
-
 try {
+    $jwt = new JWT();
+    $payload = ['name' => $name, 'type' => 'api_access'];
+    if ($seconds) {
+        $payload['exp'] = time() + $seconds;
+    }
+    $token = $jwt->generateToken($payload);
+
     /** @var PDO $db */
     $db = $container->resolve(PDO::class);
-    $stmt = $db->prepare(
-        'INSERT INTO api_tokens (name, token, expires_at, created_at, is_active)
-         VALUES (:n,:t,:e,NOW(),1)'
-    );
-    $stmt->execute([
-        ':n'=>$name,
-        ':t'=>$token,
-        ':e'=>$seconds ? date('Y-m-d H:i:s', time()+$seconds) : null
-    ]);
+    $stmt = $db->prepare('UPDATE api_tokens SET name = :n WHERE token_hash = :h');
+    $stmt->execute([':n' => $name, ':h' => hash('sha256', $token)]);
 
-    echo json_encode(['success'=>true,'token'=>$token]);
+    echo json_encode(['success'=>true,'token'=>['token'=>$token]]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
