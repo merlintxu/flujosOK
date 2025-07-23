@@ -37,7 +37,7 @@ class RingoverService
         $offset = 0;
 
         do {
-            $query = [
+            $params = [
                 'date_start' => $since->format('Y-m-d\TH:i:sP'),
                 'limit_count' => $limit,
                 'limit_offset' => $offset,
@@ -47,12 +47,15 @@ class RingoverService
             $logger = new \FlujosDimension\Core\Logger();
             $logger->debug('Ringover depuración', [
                 'token' => $this->apiKey,
-                'query' => $query
+                'params' => $params
             ]);
 
-            $resp = $this->http->request('GET', $uri, [
-                'headers' => ['Authorization' => $this->apiKey],
-                'query'   => $query,
+            $resp = $this->http->request('POST', $uri, [
+                'headers' => [
+                    'Authorization' => $this->apiKey,
+                    'Content-Type' => 'application/json'
+                ],
+                'body'   => json_encode($params),
             ]);
 
             if ($resp->getStatusCode() !== 200) {
