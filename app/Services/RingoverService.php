@@ -33,15 +33,29 @@ class RingoverService
     public function getCalls(\DateTimeInterface $since): Generator
     {
         $uri   = "{$this->baseUrl}/calls";
-        $query = [
-            'date_start' => $since->format('Y-m-d\TH:i:sP'),
-            'limit'      => 1000,
-        ];
+        $limit = 1000;
+        $offset = 0;
 
         do {
-            $resp = $this->http->request('GET', $uri, [
-                'headers' => ['Authorization' => $this->apiKey],
-                'query'   => $query,
+            $params = [
+                'date_start' => $since->format('Y-m-d\TH:i:sP'),
+                'limit_count' => $limit,
+                'limit_offset' => $offset,
+            ];
+
+            // Volcado temporal usando Logger
+            $logger = new \FlujosDimension\Core\Logger();
+            $logger->debug('Ringover depuración', [
+                'token' => $this->apiKey,
+                'params' => $params
+            ]);
+
+            $resp = $this->http->request('POST', $uri, [
+                'headers' => [
+                    'Authorization' => $this->apiKey,
+                    'Content-Type' => 'application/json'
+                ],
+                'body'   => json_encode($params),
             ]);
 
             if ($resp->getStatusCode() !== 200) {
@@ -49,19 +63,15 @@ class RingoverService
             }
 
             $body = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $calls = $body['data'] ?? [];
 
-            foreach ($body['data'] ?? [] as $call) {
+            foreach ($calls as $call) {
                 yield $call;
             }
 
-            $link = $resp->getHeaderLine('Link');
-            if (preg_match('#<([^>]+)>;\s*rel="next"#', $link, $m)) {
-                $uri   = $m[1];   // siguiente página ya con querystring
-                $query = [];
-            } else {
-                $uri = null;
-            }
-        } while ($uri);
+            $count = count($calls);
+            $offset += $limit;
+        } while ($count === $limit);
     }
 
     /**
