@@ -13,6 +13,7 @@ require_once __DIR__ . '/auth.php';
 requireLogin();
 $csrf = csrfToken();
 /* ---------- Carga .env ---------- */
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 use FlujosDimension\Core\Config;
 $config = Config::getInstance();
 $requiredEnv = ['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS'];

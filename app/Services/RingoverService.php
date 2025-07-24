@@ -36,6 +36,8 @@ class RingoverService
         $limit = 1000;
         $offset = 0;
 
+        $allCalls = [];
+        $page = 0;
         do {
             $query = [
                 'date_start' => $since->format('Y-m-d\TH:i:sP'),
@@ -58,17 +60,30 @@ class RingoverService
             if ($resp->getStatusCode() !== 200) {
                 throw new RuntimeException("Ringover error: {$resp->getStatusCode()}");
             }
-
             $body = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
-            $calls = $body['data'] ?? [];
-
+            // Guardar el body de cada página en un archivo JSON para depuración
+            $logDir = dirname(__DIR__,2) . '/storage/logs';
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0775, true);
+            }
+            $pageFile = $logDir . '/ringover_body_page_' . $page . '.json';
+            file_put_contents($pageFile, json_encode($body, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
+            $logger->debug('Ringover respuesta', [
+                'page' => $page,
+                'file' => $pageFile
+            ]);
+            $calls = $body['call_list'] ?? [];
             foreach ($calls as $call) {
+                $allCalls[] = $call;
                 yield $call;
             }
 
             $count = count($calls);
             $offset += $limit;
+            $page++;
         } while ($count === $limit);
+        // Guardar el JSON de todas las llamadas de todas las páginas
+     
     }
 
     /**

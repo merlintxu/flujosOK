@@ -55,18 +55,35 @@ final class CallRepository
     /** Insert a call if ringover_id not present */
     public function insertOrIgnore(array $call): void
     {
-        $sql = 'INSERT IGNORE INTO calls (ringover_id, phone_number, direction, status, duration, recording_url, created_at) '
-             . 'VALUES (:ringover_id, :phone_number, :direction, :status, :duration, :recording_url, :created_at)';
+        $sql = 'INSERT INTO calls (
+            ringover_id, call_id, contact_number, contact_firstname, contact_lastname, contact_fullname,
+            recording_url, voicemail_url, direction, start_time, duration, last_state, summary, raw_json
+        ) VALUES (
+            :ringover_id, :call_id, :contact_number, :contact_firstname, :contact_lastname, :contact_fullname,
+            :recording_url, :voicemail_url, :direction, :start_time, :duration, :last_state, :summary, :raw_json
+        )
+        ON DUPLICATE KEY UPDATE
+            recording_url = VALUES(recording_url),
+            voicemail_url = VALUES(voicemail_url),
+            summary = VALUES(summary),
+            raw_json = VALUES(raw_json)';
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':ringover_id'  => $call['id']          ?? null,
-            ':phone_number' => $call['phone_number'] ?? null,
-            ':direction'    => $call['direction']    ?? 'inbound',
-            ':status'       => $call['status']       ?? 'pending',
-            ':duration'     => $call['duration']     ?? 0,
-            ':recording_url'=> $call['recording_url']?? null,
-            ':created_at'   => $call['start_time']   ?? date('Y-m-d H:i:s'),
+            ':ringover_id'      => $call['cdr_id'] ?? null,
+            ':call_id'          => $call['call_id'] ?? null,
+            ':contact_number'   => $call['contact_number'] ?? null,
+            ':contact_firstname'=> $call['contact']['firstname'] ?? null,
+            ':contact_lastname' => $call['contact']['lastname'] ?? null,
+            ':contact_fullname' => $call['contact']['concat_name'] ?? null,
+            ':recording_url'    => $call['record'] ?? null,
+            ':voicemail_url'    => $call['voicemail'] ?? null,
+            ':direction'        => ($call['direction'] ?? 'in') === 'in' ? 'inbound' : 'outbound',
+            ':start_time'       => $call['start_time'] ?? date('Y-m-d H:i:s'),
+            ':duration'         => $call['total_duration'] ?? 0,
+            ':last_state'       => $call['last_state'] ?? null,
+            ':summary'          => $call['note'] ?? null,
+            ':raw_json'         => json_encode($call, JSON_UNESCAPED_UNICODE),
         ]);
     }
 
