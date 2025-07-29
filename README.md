@@ -42,6 +42,7 @@ Optional: `FTP_PORT` or `FTP_SERVER_DIR` if you need to override defaults.
 - [Installation guide](docs/INSTALL.md)
 - [Project documentation (Spanish)](docs/README_es.md)
 - [API reference](docs/API.md)
+- [Module responsibilities](docs/modules.md)
 
 ## License
 
