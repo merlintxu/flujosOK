@@ -16,13 +16,14 @@ class Call extends BaseModel
     protected array $fillable = [
         'ringover_id', 'phone_number', 'direction', 'status', 'duration',
         'recording_url', 'ai_transcription', 'ai_summary', 'ai_sentiment',
-        'pipedrive_contact_id'
+        'pipedrive_contact_id', 'pipedrive_deal_id'
     ];
     
     protected array $casts = [
         'id' => 'int',
         'duration' => 'int',
         'pipedrive_contact_id' => 'int',
+        'pipedrive_deal_id' => 'int',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
