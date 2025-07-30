@@ -5,8 +5,14 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Core\JWT;
 
+/**
+ * Issue and validate API tokens.
+ */
 class TokenController extends BaseController
 {
+    /**
+     * Generate a new API token for the caller.
+     */
     public function generate(): Response
     {
         try {
@@ -23,6 +29,9 @@ class TokenController extends BaseController
         }
     }
 
+    /**
+     * Check if a provided token is valid.
+     */
     public function verify(): Response
     {
         try {
@@ -43,6 +52,9 @@ class TokenController extends BaseController
         }
     }
 
+    /**
+     * Revoke a previously issued token.
+     */
     public function revoke(): Response
     {
         try {

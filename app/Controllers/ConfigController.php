@@ -5,8 +5,14 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Core\Config;
 
+/**
+ * Manage runtime configuration values.
+ */
 class ConfigController extends BaseController
 {
+    /**
+     * Return the full configuration array.
+     */
     public function index(): Response
     {
         try {
@@ -17,6 +23,9 @@ class ConfigController extends BaseController
         }
     }
 
+    /**
+     * Update a single configuration key.
+     */
     public function update(string $key): Response
     {
         try {
@@ -32,6 +41,9 @@ class ConfigController extends BaseController
         }
     }
 
+    /**
+     * Update multiple configuration values at once.
+     */
     public function batch(): Response
     {
         try {

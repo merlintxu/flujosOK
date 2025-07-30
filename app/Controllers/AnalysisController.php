@@ -5,8 +5,14 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Services\AnalyticsService;
 
+/**
+ * Endpoints used to trigger and query AI analysis tasks.
+ */
 class AnalysisController extends BaseController
 {
+    /**
+     * Launch analysis batch processing.
+     */
     public function process(): Response
     {
         try {
@@ -28,6 +34,9 @@ class AnalysisController extends BaseController
         }
     }
 
+    /**
+     * Retrieve processing status for a given batch.
+     */
     public function batchStatus(string $id): Response
     {
         try {
@@ -46,6 +55,9 @@ class AnalysisController extends BaseController
         }
     }
 
+    /**
+     * Run a sentiment analysis batch on pending calls.
+     */
     public function sentimentBatch(): Response
     {
         try {
@@ -62,6 +74,9 @@ class AnalysisController extends BaseController
         }
     }
 
+    /**
+     * Return analysis keywords placeholder.
+     */
     public function keywords(): Response
     {
         try {

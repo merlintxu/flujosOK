@@ -5,8 +5,14 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Models\Call;
 
+/**
+ * CRUD operations for call records stored in the system.
+ */
 class CallsController extends BaseController
 {
+    /**
+     * List calls with pagination metadata.
+     */
     public function index(): Response
     {
         try {
@@ -29,6 +35,9 @@ class CallsController extends BaseController
         }
     }
 
+    /**
+     * Display a single call record.
+     */
     public function show(string $id): Response
     {
         try {
@@ -45,6 +54,9 @@ class CallsController extends BaseController
         }
     }
 
+    /**
+     * Persist a new call entry.
+     */
     public function store(): Response
     {
         try {
@@ -69,6 +81,9 @@ class CallsController extends BaseController
         }
     }
 
+    /**
+     * Update an existing call.
+     */
     public function update(string $id): Response
     {
         try {
@@ -93,6 +108,9 @@ class CallsController extends BaseController
         }
     }
 
+    /**
+     * Delete a call record from storage.
+     */
     public function destroy(string $id): Response
     {
         try {

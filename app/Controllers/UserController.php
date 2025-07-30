@@ -5,8 +5,14 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use PDO;
 
+/**
+ * Manage application users and their permissions.
+ */
 class UserController extends BaseController
 {
+    /**
+     * Return a list of active users.
+     */
     public function index(): Response
     {
         try {
@@ -23,6 +29,9 @@ class UserController extends BaseController
         }
     }
 
+    /**
+     * Create a new user in the system.
+     */
     public function create(): Response
     {
         try {
@@ -53,6 +62,9 @@ class UserController extends BaseController
         }
     }
 
+    /**
+     * Update an existing user's data.
+     */
     public function update(string $id): Response
     {
         try {
@@ -83,6 +95,9 @@ class UserController extends BaseController
         }
     }
 
+    /**
+     * Change the role or permissions of a user.
+     */
     public function permissions(string $id): Response
     {
         try {

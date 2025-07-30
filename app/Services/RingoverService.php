@@ -17,6 +17,9 @@ class RingoverService
     private string     $apiKey;
     private string     $baseUrl;
 
+    /**
+     * Prepare HTTP client and configuration values.
+     */
     public function __construct(Container $c)
     {
         $this->http    = $c->resolve('httpClient');
