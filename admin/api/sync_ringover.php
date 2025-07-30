@@ -8,11 +8,14 @@ require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 $container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
 
 use FlujosDimension\Core\JWT;
+use FlujosDimension\Core\Request;
 
 header('Content-Type: application/json');
 
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
+
+$request = new Request();
 
 /** @var RingoverService $ringover */
 $ringover = $container->resolve(RingoverService::class);
@@ -20,7 +23,7 @@ $ringover = $container->resolve(RingoverService::class);
 $repo     = $container->resolve('callRepository');
 
 $since    = new DateTimeImmutable('-1 hour');
-$download = (bool)($_POST['download'] ?? false);
+$download = filter_var($request->post('download', false), FILTER_VALIDATE_BOOLEAN);
 $inserted = 0;
 
 try {
