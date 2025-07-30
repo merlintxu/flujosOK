@@ -15,9 +15,6 @@
     "psr-4": {
       "FlujosDimension\\": "app/"
     },
-    "files": [
-      "app/helpers.php"
-    ],
     "classmap": [
       "app/Core/Config.php",
       "app/Core/Database.php",
