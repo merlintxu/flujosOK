@@ -17,3 +17,5 @@ Classes in `app/Repositories` implement focused data access layers using PDO. Th
 
 ## Admin scripts
 The `admin` directory provides a small web dashboard implemented with PHP scripts. These pages manage authentication, generate tokens, trigger synchronizations and render HTML views for configuration tasks.
+
+The admin utilities load a lightweight bootstrap file located at `app/bootstrap/container.php`. This script now creates an `Application` instance and exposes its service container so bindings stay identical to the main runtime.
