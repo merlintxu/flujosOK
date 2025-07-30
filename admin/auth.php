@@ -3,6 +3,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+use FlujosDimension\Core\Request;
+
 function isAuthenticated(): bool {
     return isset($_SESSION['authenticated']) && $_SESSION['authenticated'] === true;
 }
@@ -26,13 +30,16 @@ function verifyCsrf(?string $token): bool {
 }
 
 function requireApiAuth(): void {
+    $request = new Request();
+
     if (!isAuthenticated()) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Authentication required']);
         exit;
     }
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+
+    if ($request->isMethod('POST')) {
+        $token = $request->post('csrf_token') ?? $request->getHeader('x-csrf-token') ?? '';
         if (!verifyCsrf($token)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
