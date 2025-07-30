@@ -9,10 +9,19 @@ $container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
 
 use FlujosDimension\Core\JWT;
 use FlujosDimension\Core\Request;
+use InvalidArgumentException;
 
 header('Content-Type: application/json');
 
 $request = new Request();
+
+try {
+    $request->validate(['token_name']);
+} catch (InvalidArgumentException $e) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    exit;
+}
 
 /* ---------- lógica ---------- */
 $name     = htmlspecialchars(trim((string)$request->post('token_name', 'Token API')), ENT_QUOTES, 'UTF-8');
