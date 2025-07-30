@@ -2,27 +2,62 @@
 
 namespace FlujosDimension\Controllers;
 
-use FlujosDimension\Core\Container;
-use FlujosDimension\Core\Request;
 use FlujosDimension\Core\Response;
+use FlujosDimension\Core\JWT;
 
 class TokenController extends BaseController
 {
     public function generate(): Response
     {
-        $token = bin2hex(random_bytes(16));
-        return $this->jsonResponse(['token' => $token]);
+        try {
+            if ($this->container->bound(JWT::class)) {
+                /** @var JWT $jwt */
+                $jwt = $this->service(JWT::class);
+                $token = $jwt->generateToken();
+            } else {
+                $token = bin2hex(random_bytes(16));
+            }
+            return $this->jsonResponse(['token' => $token]);
+        } catch (\Exception $e) {
+            return $this->handleError($e, 'Error generating token');
+        }
     }
 
     public function verify(): Response
     {
-        $token = $this->request->input('token');
-        $valid = is_string($token) && $token !== '';
-        return $this->jsonResponse(['valid' => $valid]);
+        try {
+            $data = $this->request->all();
+            $this->validate($data, ['token' => 'required|string']);
+
+            $valid = true;
+            if ($this->container->bound(JWT::class)) {
+                /** @var JWT $jwt */
+                $jwt = $this->service(JWT::class);
+                $valid = (bool) $jwt->validateToken($data['token']);
+            } else {
+                $valid = $data['token'] !== '';
+            }
+            return $this->jsonResponse(['valid' => $valid]);
+        } catch (\Exception $e) {
+            return $this->handleError($e, 'Error validating token');
+        }
     }
 
     public function revoke(): Response
     {
-        return $this->jsonResponse(['revoked' => true]);
+        try {
+            $data = $this->request->all();
+            $this->validate($data, ['token' => 'required|string']);
+
+            $revoked = true;
+            if ($this->container->bound(JWT::class)) {
+                /** @var JWT $jwt */
+                $jwt = $this->service(JWT::class);
+                $revoked = $jwt->revokeToken($data['token']);
+            }
+            return $this->jsonResponse(['revoked' => $revoked]);
+        } catch (\Exception $e) {
+            return $this->handleError($e, 'Error revoking token');
+        }
     }
 }
