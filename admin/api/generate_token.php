@@ -8,12 +8,22 @@ require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 $container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
 
 use FlujosDimension\Core\JWT;
+use FlujosDimension\Core\Request;
 
 header('Content-Type: application/json');
 
+$request = new Request();
+
 /* ---------- lógica ---------- */
-$name     = $_POST['token_name'] ?? 'Token API';
-$duration = $_POST['duration']   ?? 'indefinite';
+$name     = htmlspecialchars(trim((string)$request->post('token_name', 'Token API')), ENT_QUOTES, 'UTF-8');
+$duration = $request->post('duration', 'indefinite');
+
+$allowedDurations = ['1hour','1day','1week','1month','1year','indefinite'];
+if (!in_array($duration, $allowedDurations, true)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid duration']);
+    exit;
+}
 
 $seconds  = match($duration){
     '1hour' => 3600,
