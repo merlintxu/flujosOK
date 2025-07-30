@@ -15,7 +15,7 @@ class Application
     private Router $router;
     private Request $request;
     private ErrorHandler $errorHandler;
-    private array $config;
+    private Config $config;
     private ?PDO $database = null;
     
     public function __construct()
@@ -34,6 +34,8 @@ class Application
         // Cargar variables de entorno desde bootstrap
         require_once dirname(__DIR__, 2) . '/bootstrap/env.php';
 
+        $this->config = Config::getInstance();
+
         // Valores por defecto
         $defaults = [
             'APP_ENV' => 'production',
@@ -44,11 +46,14 @@ class Application
             'JWT_EXPIRATION_HOURS' => '24'
         ];
 
-        // Mezclar $_ENV con los valores por defecto
-        $this->config = array_merge($defaults, $_ENV);
+        foreach ($defaults as $key => $value) {
+            if (!$this->config->has($key)) {
+                $this->config->set($key, $value);
+            }
+        }
 
         // Configurar zona horaria
-        date_default_timezone_set($this->config['TIMEZONE']);
+        date_default_timezone_set($this->config->get('TIMEZONE'));
 
     }
     
@@ -60,7 +65,7 @@ class Application
         $this->container = new Container();
         $this->request = new Request();
         $this->router = new Router($this->container);
-        $this->errorHandler = new ErrorHandler($this->config['APP_DEBUG'] === 'true');
+        $this->errorHandler = new ErrorHandler($this->config->get('APP_DEBUG') === 'true');
     }
     
     /**
@@ -73,20 +78,21 @@ class Application
 private function registerServices(): void
 {
     /* ---------- Configuración y núcleo ---------- */
-    $this->container->bind('config', $this->config);  // array de configuración
+    $this->container->singleton(Config::class, fn () => $this->config);
+    $this->container->alias(Config::class, 'config');
 
     // Conexión PDO única
-    $this->container->bind(PDO::class, fn () => $this->getDatabaseConnection());
+    $this->container->singleton(PDO::class, fn () => $this->getDatabaseConnection());
     // Alias para acceder a la base de datos por nombre
     $this->container->alias(PDO::class, 'database');
 
     /* ---------- Logger ---------- */
-    $this->container->bind('logger', fn () =>
+    $this->container->singleton('logger', fn () =>
         new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')
     );
 
     /* ---------- HttpClient (Guzzle + retry) ---------- */
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Infrastructure\Http\HttpClient::class,
         fn () => new \FlujosDimension\Infrastructure\Http\HttpClient()
     );
@@ -97,7 +103,7 @@ private function registerServices(): void
     );
 
     /* ---------- Repositorios ---------- */
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Repositories\CallRepository::class,
         fn ($c) => new \FlujosDimension\Repositories\CallRepository(
             $c->resolve(PDO::class)
@@ -110,31 +116,31 @@ private function registerServices(): void
 
     /* ---------- Integraciones externas ---------- */
     // OpenAI
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Services\OpenAIService::class,
         fn ($c) => new \FlujosDimension\Services\OpenAIService(
             $c->resolve('httpClient'),
-            $this->config['OPENAI_API_KEY']
+            $this->config->get('OPENAI_API_KEY')
         )
     );
 
     // Pipedrive
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Services\PipedriveService::class,
         fn ($c) => new \FlujosDimension\Services\PipedriveService(
             $c->resolve('httpClient'),
-            $this->config['PIPEDRIVE_API_TOKEN']
+            $this->config->get('PIPEDRIVE_API_TOKEN')
         )
     );
 
     // Ringover
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Services\RingoverService::class,
         fn ($c) => new \FlujosDimension\Services\RingoverService($c)   // usa Container internamente
     );
 
     /* ---------- Servicios de dominio ---------- */
-    $this->container->bind(
+    $this->container->singleton(
         \FlujosDimension\Services\AnalyticsService::class,            // <- ruta exacta: app\Services\AnalyticsService.php
         fn ($c) => new \FlujosDimension\Services\AnalyticsService(
             $c->resolve('callRepository'),
@@ -170,12 +176,12 @@ private function registerServices(): void
         try {
             $dsn = sprintf(
                 'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                $this->config['DB_HOST'],
-                $this->config['DB_PORT'],
-                $this->config['DB_NAME']
+                $this->config->get('DB_HOST'),
+                $this->config->get('DB_PORT'),
+                $this->config->get('DB_NAME')
             );
-            
-            $this->database = new PDO($dsn, $this->config['DB_USER'], $this->config['DB_PASS'], [
+
+            $this->database = new PDO($dsn, $this->config->get('DB_USER'), $this->config->get('DB_PASS'), [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
@@ -288,7 +294,15 @@ private function registerServices(): void
      */
     public function config(string $key, $default = null)
     {
-        return $this->config[$key] ?? $default;
+        return $this->config->get($key, $default);
+    }
+
+    /**
+     * Expose the underlying service container
+     */
+    public function getContainer(): Container
+    {
+        return $this->container;
     }
 }
 
