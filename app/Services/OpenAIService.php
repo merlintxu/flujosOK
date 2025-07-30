@@ -6,10 +6,16 @@ namespace FlujosDimension\Services;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use RuntimeException;
 
+/**
+ * Lightweight wrapper for the OpenAI HTTP API.
+ */
 final class OpenAIService
 {
     private const BASE = 'https://api.openai.com/v1';
 
+    /**
+     * Configure the HTTP client, API key and model.
+     */
     public function __construct(
         private readonly HttpClient $http,
         private readonly string     $apiKey,

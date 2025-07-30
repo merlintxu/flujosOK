@@ -7,8 +7,14 @@ use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Services\AnalyticsService;
 use FlujosDimension\Repositories\CallRepository;
 
+/**
+ * Synchronisation routines between Ringover and the local database.
+ */
 class SyncController extends BaseController
 {
+    /**
+     * Automatic hourly sync triggered by cron.
+     */
     public function hourly(): Response
     {
         try {
@@ -41,6 +47,9 @@ class SyncController extends BaseController
         }
     }
 
+    /**
+     * Manually start a sync for a custom time range.
+     */
     public function manual(): Response
     {
         try {
@@ -70,6 +79,9 @@ class SyncController extends BaseController
         }
     }
 
+    /**
+     * Return timestamp of the last synced call.
+     */
     public function status(): Response
     {
         try {

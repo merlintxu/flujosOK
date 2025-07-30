@@ -5,10 +5,16 @@ namespace FlujosDimension\Services;
 
 use FlujosDimension\Repositories\CallRepository;
 
+/**
+ * Handles AI-based analysis of call records.
+ */
 final class AnalyticsService
 {
     private int $lastProcessed = 0;
 
+    /**
+     * Set up the repository and OpenAI client.
+     */
     public function __construct(
         private readonly CallRepository $repo,
         private readonly OpenAIService  $openai
@@ -40,6 +46,9 @@ final class AnalyticsService
         $this->lastProcessed = count($pending);
     }
 
+    /**
+     * Number of calls processed in the last batch.
+     */
     public function lastProcessed(): int
     {
         return $this->lastProcessed;

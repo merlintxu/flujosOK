@@ -6,15 +6,24 @@ namespace FlujosDimension\Services;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use RuntimeException;
 
+/**
+ * Simplified client for a subset of the Pipedrive API.
+ */
 final class PipedriveService
 {
     private const BASE = 'https://api.pipedrive.com/v1';
 
+    /**
+     * Provide HTTP client and API token.
+     */
     public function __construct(
         private readonly HttpClient $http,
         private readonly string     $token
     ) {}
 
+    /**
+     * Search a contact ID by phone number.
+     */
     public function findPersonByPhone(string $phone): ?int
     {
         $resp = $this->http->request('GET', self::BASE . '/persons/search', [
@@ -35,6 +44,11 @@ final class PipedriveService
     }
 
     /** @return int Deal-ID */
+    /**
+     * Create or update a Pipedrive deal.
+     *
+     * @return int Deal-ID
+     */
     public function createOrUpdateDeal(array $payload): int
     {
         $resp = $this->http->request('POST', self::BASE . '/deals', [

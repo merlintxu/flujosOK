@@ -23,6 +23,9 @@ abstract class BaseModel
     protected array $casts = [];
     protected bool $timestamps = true;
     
+    /**
+     * Resolve common services from the container.
+     */
     public function __construct(Container $container)
     {
         $this->container = $container;
