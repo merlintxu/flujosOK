@@ -34,17 +34,24 @@ final class CallRepository
 
         $this->db->beginTransaction();
         foreach ($calls as $i => $call) {
-            $analysis = $choices[$i]['message']['content'] ?? '';
+            $analysis  = $choices[$i]['message']['content'] ?? '';
+            $keywords  = null;
+            $data = json_decode($analysis, true);
+            if (is_array($data) && isset($data['keywords'])) {
+                $keywords = is_array($data['keywords']) ? implode(',', $data['keywords']) : (string)$data['keywords'];
+            }
 
             $stmt = $this->db->prepare(
                 'UPDATE calls
                      SET analysis        = :analysis,
+                         ai_keywords     = :keywords,
                          pending_analysis = 0,
                          ai_processed_at  = :now
                    WHERE id = :id'
             );
             $stmt->execute([
                 ':analysis' => $analysis,
+                ':keywords' => $keywords,
                 ':now'      => $now,
                 ':id'       => $call['id'],
             ]);

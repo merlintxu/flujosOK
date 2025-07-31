@@ -309,6 +309,7 @@ class Database
                     recording_url TEXT,
                     ai_transcription TEXT,
                     ai_summary TEXT,
+                    ai_keywords TEXT,
                     ai_sentiment ENUM('positive', 'negative', 'neutral') DEFAULT 'neutral',
                     pipedrive_contact_id INT,
                     pipedrive_deal_id INT,
