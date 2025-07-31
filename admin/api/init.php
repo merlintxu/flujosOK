@@ -52,3 +52,35 @@ if (!function_exists('validate_fields')) {
         }
     }
 }
+
+if (!function_exists('validate_input')) {
+    /**
+     * Validate POST parameters using filter_var rules.
+     *
+     * @param array<string, array{filter:int, required?:bool}> $rules
+     * @return array<string, mixed>
+     */
+    function validate_input(Request $request, array $rules): array {
+        $data = [];
+        foreach ($rules as $name => $opts) {
+            $required = $opts['required'] ?? false;
+            $filter   = $opts['filter']   ?? FILTER_DEFAULT;
+            $value    = $request->post($name);
+
+            if ($value === null) {
+                if ($required) {
+                    respond_error("Missing field: $name", 400);
+                }
+                continue;
+            }
+
+            $filtered = filter_var($value, $filter, ['flags' => FILTER_NULL_ON_FAILURE]);
+            if ($filtered === null && $filter !== FILTER_DEFAULT) {
+                respond_error("Invalid value for $name", 400);
+            }
+            $data[$name] = $filtered ?? $value;
+        }
+
+        return $data;
+    }
+}
