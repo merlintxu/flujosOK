@@ -13,6 +13,10 @@ use Exception;
 class Call extends BaseModel
 {
     protected string $table = 'calls';
+    protected array $sortable = [
+        'id', 'created_at', 'updated_at', 'duration', 'status', 'direction',
+        'phone_number', 'ringover_id'
+    ];
     protected array $fillable = [
         'ringover_id', 'phone_number', 'direction', 'status', 'duration',
         'recording_url', 'ai_transcription', 'ai_summary', 'ai_keywords',
@@ -172,7 +176,12 @@ class Call extends BaseModel
         
         // Obtener datos paginados
         $orderBy = $filters['order_by'] ?? 'created_at';
+        if (!in_array($orderBy, $this->sortable, true)) {
+            $orderBy = 'created_at';
+        }
+
         $direction = strtoupper($filters['direction_sort'] ?? 'DESC');
+        $direction = $direction === 'ASC' ? 'ASC' : 'DESC';
         $offset = ($page - 1) * $perPage;
         
         $sql = "SELECT * FROM {$this->table} 

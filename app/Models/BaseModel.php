@@ -21,6 +21,8 @@ abstract class BaseModel
     protected array $fillable = [];
     protected array $guarded = ['id', 'created_at', 'updated_at'];
     protected array $casts = [];
+    /** @var string[] Allowable columns for ORDER BY clauses */
+    protected array $sortable = [];
     protected bool $timestamps = true;
     
     /**
@@ -160,7 +162,12 @@ abstract class BaseModel
     public function paginate(int $page = 1, int $perPage = 20, ?string $orderBy = null, string $direction = 'DESC'): array
     {
         $orderBy = $orderBy ?: $this->primaryKey;
-        $direction = strtoupper($direction) === 'ASC' ? 'ASC' : 'DESC';
+        if (!empty($this->sortable) && !in_array($orderBy, $this->sortable, true)) {
+            $orderBy = $this->primaryKey;
+        }
+
+        $direction = strtoupper($direction);
+        $direction = $direction === 'ASC' ? 'ASC' : 'DESC';
         
         // Contar total
         $countSql = "SELECT COUNT(*) as total FROM {$this->table}";
