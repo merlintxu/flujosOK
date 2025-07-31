@@ -15,13 +15,13 @@ class Request
     private ?string $body;
     private ?array $jsonBody;
     
-    public function __construct()
+    public function __construct(?string $body = null)
     {
         $this->query = $_GET ?? [];
         $this->post = $_POST ?? [];
         $this->server = $_SERVER ?? [];
         $this->headers = $this->parseHeaders();
-        $this->body = file_get_contents('php://input');
+        $this->body = $body ?? file_get_contents('php://input');
         $this->jsonBody = null;
     }
     
@@ -72,8 +72,11 @@ class Request
     {
         if ($this->jsonBody === null && $this->body) {
             $this->jsonBody = json_decode($this->body, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \InvalidArgumentException('Invalid JSON body: ' . json_last_error_msg());
+            }
         }
-        
+
         return $this->jsonBody;
     }
     
