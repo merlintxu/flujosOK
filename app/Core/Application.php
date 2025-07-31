@@ -52,6 +52,10 @@ class Application
             }
         }
 
+        if (!$this->config->validateRequiredConfig()) {
+            throw new \RuntimeException('Missing required configuration values');
+        }
+
         // Configurar zona horaria
         date_default_timezone_set($this->config->get('TIMEZONE'));
 

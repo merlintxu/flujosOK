@@ -80,8 +80,35 @@ class AnalysisController extends BaseController
     public function keywords(): Response
     {
         try {
-            // Not implemented; placeholder
-            return $this->jsonResponse(['data' => []]);
+            if (!($this->container->bound(\FlujosDimension\Models\Call::class)
+                && $this->container->bound(\FlujosDimension\Services\OpenAIService::class))) {
+                return $this->jsonResponse(['data' => []]);
+            }
+
+            $limit = (int)$this->request->get('limit', 20);
+
+            /** @var \FlujosDimension\Models\Call $model */
+            $model = $this->service(\FlujosDimension\Models\Call::class);
+            $calls = $model->getCallsMissingKeywords($limit);
+            if ($calls === []) {
+                return $this->jsonResponse(['data' => []]);
+            }
+
+            /** @var \FlujosDimension\Services\OpenAIService $openai */
+            $openai = $this->service(\FlujosDimension\Services\OpenAIService::class);
+            $results = [];
+            foreach ($calls as $call) {
+                $messages = [[
+                    'role' => 'user',
+                    'content' => 'Extract 5 keywords from the following transcript: ' . $call['ai_transcription']
+                ]];
+                $resp = $openai->chat($messages, ['temperature' => 0]);
+                $keywords = $resp['choices'][0]['message']['content'] ?? '';
+                $model->updateAIKeywords((int)$call['id'], $keywords);
+                $results[$call['id']] = $keywords;
+            }
+
+            return $this->jsonResponse(['data' => $results]);
         } catch (\Exception $e) {
             return $this->handleError($e, 'Error retrieving keywords');
         }

@@ -126,6 +126,15 @@ class ControllerActionsTest extends TestCase
         $this->assertSame(0, json_decode($res->getContent(), true)['processed']);
     }
 
+    public function testAnalysisKeywordsNoService()
+    {
+        $c = $this->container();
+        $controller = new AnalysisController($c, $this->request('GET','/api/analysis/keywords'));
+        $res = $controller->keywords();
+        $this->assertSame(200, $res->getStatusCode());
+        $this->assertSame([], json_decode($res->getContent(), true)['data']);
+    }
+
     public function testUserCreateWithoutDb()
     {
         $c = $this->container();

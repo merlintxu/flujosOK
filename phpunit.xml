@@ -8,4 +8,13 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <env name="DB_HOST" value="localhost"/>
+        <env name="DB_NAME" value="testdb"/>
+        <env name="DB_USER" value="user"/>
+        <env name="DB_PASS" value="pass"/>
+        <env name="ADMIN_USER" value="admin"/>
+        <env name="ADMIN_PASS" value="secret"/>
+        <env name="JWT_SECRET" value="key"/>
+    </php>
 </phpunit>

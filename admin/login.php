@@ -11,8 +11,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'login' && $_SERVER['REQUEST_M
         $user = $_POST['username'] ?? '';
         $pass = $_POST['password'] ?? '';
         $envUser = $_ENV['ADMIN_USER'] ?? 'admin';
-        $envPass = $_ENV['ADMIN_PASS'] ?? 'password';
-        if ($user === $envUser && $pass === $envPass) {
+        $envPassHash = $_ENV['ADMIN_PASS'] ?? password_hash('password', PASSWORD_DEFAULT);
+        if ($user === $envUser && password_verify($pass, $envPassHash)) {
             $_SESSION['authenticated'] = true;
             $_SESSION['admin_user'] = $user;
             $_SESSION['login_time'] = time();

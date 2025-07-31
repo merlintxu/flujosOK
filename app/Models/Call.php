@@ -237,15 +237,34 @@ class Call extends BaseModel
      */
     public function getTranscribedCalls(int $limit = 50): array
     {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE ai_transcription IS NOT NULL AND ai_transcription != '' 
-                ORDER BY created_at DESC 
+        $sql = "SELECT * FROM {$this->table}
+                WHERE ai_transcription IS NOT NULL AND ai_transcription != ''
+                ORDER BY created_at DESC
                 LIMIT :limit";
         
         $stmt = $this->database->prepare($sql);
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Calls that have transcription but missing keywords.
+     */
+    public function getCallsMissingKeywords(int $limit = 20): array
+    {
+        $sql = "SELECT * FROM {$this->table}
+                WHERE ai_transcription IS NOT NULL
+                  AND ai_transcription != ''
+                  AND (ai_keywords IS NULL OR ai_keywords = '')
+                ORDER BY created_at DESC
+                LIMIT :limit";
+
+        $stmt = $this->database->prepare($sql);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
         return $stmt->fetchAll();
     }
     
