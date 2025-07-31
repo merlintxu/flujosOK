@@ -102,4 +102,39 @@ class DashboardControllerTest extends TestCase
         $this->assertCount(0, glob($cacheDir . '/*.cache'));
         @rmdir($cacheDir);
     }
+
+    public function testIndexReturnsDashboardData()
+    {
+        $container = new Container();
+        $container->instance('logger', new DummyLogger());
+        $container->instance('config', []);
+        $container->instance('database', new DummyDbForSystemInfo());
+
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ringover_id TEXT, phone_number TEXT, direction TEXT, status TEXT, duration INTEGER, recording_url TEXT, ai_sentiment TEXT, created_at TEXT)");
+
+        $now = new \DateTimeImmutable();
+        $stmt = $pdo->prepare("INSERT INTO calls (ringover_id, phone_number, direction, status, duration, ai_sentiment, created_at) VALUES (?,?,?,?,?,?,?)");
+        $stmt->execute(['1','111','inbound','answered',30,'positive',$now->format('Y-m-d H:i:s')]);
+        $stmt->execute(['2','222','outbound','missed',0,'negative',$now->sub(new \DateInterval('P1D'))->format('Y-m-d H:i:s')]);
+
+        $repo = new CallRepository($pdo);
+        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $analytics = new AnalyticsService($repo, $openai);
+        $container->instance('analyticsService', $analytics);
+        $container->instance('ringoverService', new DummyRingover());
+
+        $_GET = ['period' => '7d'];
+        $_POST = [];
+        $_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'];
+        $controller = new DashboardController($container, new Request());
+        $response = $controller->index();
+
+        $this->assertInstanceOf(Response::class, $response);
+        $data = json_decode($response->getContent(), true);
+        $this->assertTrue($data['success']);
+        $this->assertSame(2, $data['data']['summary']['total_calls']);
+        $this->assertNotEmpty($data['data']['call_trends']);
+    }
 }

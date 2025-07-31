@@ -59,7 +59,32 @@ final class AnalyticsService
      */
     public function getDashboardData(string $period): array
     {
-        return ['success' => true, 'data' => []];
+        try {
+            $since = $this->periodToDate($period);
+
+            $data = [
+                'period'       => $period,
+                'summary'      => $this->repo->summarySince($since),
+                'call_trends'  => $this->repo->trendsSince($since),
+                'recent_calls' => $this->repo->recentSince($since, 10),
+            ];
+
+            return ['success' => true, 'data' => $data];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    private function periodToDate(string $period): \DateTimeImmutable
+    {
+        return match ($period) {
+            '1h'  => new \DateTimeImmutable('-1 hour'),
+            '7d'  => new \DateTimeImmutable('-7 days'),
+            '30d' => new \DateTimeImmutable('-30 days'),
+            '90d' => new \DateTimeImmutable('-90 days'),
+            '24h' => new \DateTimeImmutable('-24 hours'),
+            default => new \DateTimeImmutable('-24 hours'),
+        };
     }
 
     /**
