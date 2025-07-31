@@ -11,8 +11,14 @@ use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * Example controller used in unit tests.
+ */
 final class CallController
 {
+    /**
+     * Inject required services.
+     */
     public function __construct(
         private readonly RingoverService   $ringover,
         private readonly AnalyticsService  $analytics,
