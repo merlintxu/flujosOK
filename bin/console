@@ -4,7 +4,9 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
 use FlujosDimension\Console\SyncHourlyCommand;
+use FlujosDimension\Console\TokenCleanupCommand;
 
 $application = new Application('FlujosDimension CLI');
 $application->add(new SyncHourlyCommand());
+$application->add(new TokenCleanupCommand());
 $application->run();

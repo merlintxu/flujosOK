@@ -30,6 +30,12 @@ via Composer's binary to import the latest calls:
 vendor/bin/console sync:hourly
 ```
 
+Expired tokens can also be purged with the cleanup command:
+
+```bash
+vendor/bin/console token:cleanup
+```
+
 ### Admin login
 
 The admin panel located in the `admin/` directory requires session-based
