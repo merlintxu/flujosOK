@@ -257,6 +257,8 @@ private function registerServices(): void
 
                 // Sync and token
                 $router->post('/sync/hourly', 'SyncController@hourly');
+                $router->post('/sync/manual', 'SyncController@manual');
+                $router->get('/sync/status', 'SyncController@status');
                 $router->post('/token/generate', 'TokenController@generate');
                 $router->post('/token/validate', 'TokenController@verify');
                 $router->delete('/token/revoke', 'TokenController@revoke');
