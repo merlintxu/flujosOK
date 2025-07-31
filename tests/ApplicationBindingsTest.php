@@ -11,6 +11,8 @@ class ApplicationBindingsTest extends TestCase
     public function testJwtAndCacheBindings()
     {
         $app = new Application();
+        $app->getContainer()->singleton(\PDO::class, fn () => new \PDO('sqlite::memory:'));
+        $app->getContainer()->alias(\PDO::class, 'database');
         try {
             $this->assertInstanceOf(JWT::class, $app->service(JWT::class));
             $this->assertInstanceOf(CacheManager::class, $app->service('cache'));
@@ -23,6 +25,8 @@ class ApplicationBindingsTest extends TestCase
     public function testCacheServiceIsManager()
     {
         $app = new Application();
+        $app->getContainer()->singleton(\PDO::class, fn () => new \PDO('sqlite::memory:'));
+        $app->getContainer()->alias(\PDO::class, 'database');
         try {
             $this->assertInstanceOf(CacheManager::class, $app->service('cache'));
         } finally {

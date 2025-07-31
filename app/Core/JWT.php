@@ -7,21 +7,25 @@
  * @author Manus AI
  */
 namespace FlujosDimension\Core;
+
 use Exception;
+use PDO;
 class JWT
 {
     private $secret;
     private $algorithm;
     private $expirationHours;
+    private PDO $pdo;
     
-    public function __construct()
+    public function __construct(PDO $pdo)
     {
         $config = Config::getInstance();
         $jwtConfig = $config->getJwtConfig();
-        
+
         $this->secret = $jwtConfig['secret'];
         $this->algorithm = $jwtConfig['algorithm'];
         $this->expirationHours = $jwtConfig['expiration_hours'];
+        $this->pdo = $pdo;
         
         if (empty($this->secret)) {
             throw new Exception("JWT secret not configured");
@@ -116,13 +120,13 @@ class JWT
     public function revokeToken($token)
     {
         try {
-            $db = Database::getInstance();
             $tokenHash = hash('sha256', $token);
-            
-            $result = $db->update(
-                "UPDATE api_tokens SET is_active = FALSE WHERE token_hash = ?",
-                [$tokenHash]
+
+            $stmt = $this->pdo->prepare(
+                "UPDATE api_tokens SET is_active = FALSE WHERE token_hash = ?"
             );
+            $stmt->execute([$tokenHash]);
+            $result = $stmt->rowCount();
             
             if ($result > 0) {
                 $this->logInfo("Token revoked successfully");
@@ -143,14 +147,14 @@ class JWT
     public function getActiveTokens()
     {
         try {
-            $db = Database::getInstance();
-            
-            return $db->select(
-                "SELECT id, name, expires_at, last_used_at, created_at 
-                 FROM api_tokens 
-                 WHERE is_active = TRUE AND expires_at > NOW() 
+            $stmt = $this->pdo->prepare(
+                "SELECT id, name, expires_at, last_used_at, created_at
+                 FROM api_tokens
+                 WHERE is_active = TRUE AND expires_at > CURRENT_TIMESTAMP
                  ORDER BY created_at DESC"
             );
+            $stmt->execute();
+            return $stmt->fetchAll();
             
         } catch (Exception $e) {
             $this->logError("Error getting active tokens: " . $e->getMessage());
@@ -164,11 +168,11 @@ class JWT
     public function cleanupExpiredTokens()
     {
         try {
-            $db = Database::getInstance();
-            
-            $result = $db->delete(
-                "DELETE FROM api_tokens WHERE expires_at < NOW() OR is_active = FALSE"
+            $stmt = $this->pdo->prepare(
+                "DELETE FROM api_tokens WHERE expires_at < CURRENT_TIMESTAMP OR is_active = FALSE"
             );
+            $stmt->execute();
+            $result = $stmt->rowCount();
             
             if ($result > 0) {
                 $this->logInfo("Cleaned up $result expired tokens");
@@ -212,13 +216,15 @@ class JWT
     private function saveTokenToDatabase($token, $expiresAt)
     {
         try {
-            $db = Database::getInstance();
             $tokenHash = hash('sha256', $token);
-            
-            $db->insert(
-                "INSERT INTO api_tokens (token_hash, name, expires_at) VALUES (?, ?, FROM_UNIXTIME(?))",
-                [$tokenHash, 'API Access Token', $expiresAt]
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO api_tokens (token_hash, name, expires_at) VALUES (?, ?, ?)"
             );
+            $stmt->execute([
+                $tokenHash,
+                'API Access Token',
+                date('Y-m-d H:i:s', $expiresAt)
+            ]);
             
             $this->logInfo("Token saved to database successfully");
             
@@ -233,13 +239,12 @@ class JWT
     private function isTokenActiveInDatabase($token)
     {
         try {
-            $db = Database::getInstance();
             $tokenHash = hash('sha256', $token);
-            
-            $result = $db->selectOne(
-                "SELECT id FROM api_tokens WHERE token_hash = ? AND is_active = TRUE AND expires_at > NOW()",
-                [$tokenHash]
+            $stmt = $this->pdo->prepare(
+                "SELECT id FROM api_tokens WHERE token_hash = ? AND is_active = TRUE AND expires_at > CURRENT_TIMESTAMP"
             );
+            $stmt->execute([$tokenHash]);
+            $result = $stmt->fetch();
             
             return $result !== false;
             
@@ -255,13 +260,14 @@ class JWT
     private function updateTokenLastUsed($token)
     {
         try {
-            $db = Database::getInstance();
             $tokenHash = hash('sha256', $token);
-            
-            $db->update(
-                "UPDATE api_tokens SET last_used_at = NOW() WHERE token_hash = ?",
-                [$tokenHash]
+            $stmt = $this->pdo->prepare(
+                "UPDATE api_tokens SET last_used_at = ? WHERE token_hash = ?"
             );
+            $stmt->execute([
+                date('Y-m-d H:i:s'),
+                $tokenHash
+            ]);
             
         } catch (Exception $e) {
             $this->logError("Error updating token last used: " . $e->getMessage());

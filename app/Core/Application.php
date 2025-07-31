@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FlujosDimension\Core;
 
 use FlujosDimension\Core\{Config,Database,JWT,CacheManager};
+use PDO;
 /**
  * Aplicación Principal - Flujos Dimension v4.2
  * Migrado y mejorado desde v3
@@ -98,7 +99,7 @@ private function registerServices(): void
     $this->container->alias(PDO::class, 'database');
 
     /* ---------- JWT ---------- */
-    $this->container->singleton(JWT::class, fn () => new JWT());
+    $this->container->singleton(JWT::class, fn ($c) => new JWT($c->resolve(PDO::class)));
     $this->container->alias(JWT::class, 'jwtService');
 
     /* ---------- Logger ---------- */

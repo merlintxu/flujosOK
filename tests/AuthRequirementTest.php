@@ -5,17 +5,10 @@ use PHPUnit\Framework\TestCase;
 use FlujosDimension\Core\Container;
 use FlujosDimension\Core\Request;
 use FlujosDimension\Core\Config;
-use FlujosDimension\Core\Database;
 use FlujosDimension\Core\JWT;
 use FlujosDimension\Controllers\AuthRequiredController;
+use PDO;
 
-class TokenDbStub2 {
-    public function insert($q,$p=[]) {}
-    public function selectOne($q,$p=[]) { return ['id'=>1]; }
-    public function update($q,$p=[]) { return 1; }
-    public function delete($q,$p=[]) {}
-    public function select($q,$p=[]) { return []; }
-}
 
 class DummyLogger3 { public function error($m){} public function info($m,$c=[]){} }
 
@@ -27,15 +20,26 @@ class AuthRequirementTest extends TestCase
         $config->set('JWT_SECRET', 'secret');
         $config->set('JWT_EXPIRATION_HOURS', '1');
 
-        $ref = new \ReflectionClass(Database::class);
-        $prop = $ref->getProperty('instance');
-        $prop->setAccessible(true);
-        $prop->setValue(null, new TokenDbStub2());
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(
+            'CREATE TABLE api_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token_hash TEXT UNIQUE,
+                name TEXT,
+                expires_at TEXT,
+                last_used_at TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )'
+        );
 
         $container = new Container();
         $container->instance('logger', new DummyLogger3());
         $container->instance('config', []);
-        $container->singleton(JWT::class, fn() => new JWT());
+        $container->instance(PDO::class, $pdo);
+        $container->alias(PDO::class, 'database');
+        $container->singleton(JWT::class, fn($c) => new JWT($c->resolve(PDO::class)));
         $container->alias(JWT::class, 'jwtService');
 
         /** @var JWT $jwt */

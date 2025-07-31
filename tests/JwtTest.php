@@ -2,38 +2,38 @@
 namespace Tests;
 
 use FlujosDimension\Core\JWT;
-use FlujosDimension\Core\Database;
 use FlujosDimension\Core\Config;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
-
-class TokenDbStub {
-    public int $inserts = 0;
-    public int $selects = 0;
-    public int $updates = 0;
-    public function insert($q,$p=[]) { $this->inserts++; }
-    public function selectOne($q,$p=[]) { $this->selects++; return ['id'=>1]; }
-    public function update($q,$p=[]) { $this->updates++; return 1; }
-    public function delete($q,$p=[]) { return 0; }
-    public function select($q,$p=[]) { return []; }
-}
+use PDO;
 
 class JwtTest extends TestCase
 {
+    private PDO $pdo;
+
     protected function setUp(): void
     {
         $config = Config::getInstance();
         $config->set('JWT_SECRET', 'secret');
         $config->set('JWT_EXPIRATION_HOURS', '1');
-        $ref = new ReflectionClass(Database::class);
-        $prop = $ref->getProperty('instance');
-        $prop->setAccessible(true);
-        $prop->setValue(null, new TokenDbStub());
+
+        $this->pdo = new PDO('sqlite::memory:');
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->pdo->exec(
+            'CREATE TABLE api_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token_hash TEXT UNIQUE,
+                name TEXT,
+                expires_at TEXT,
+                last_used_at TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )'
+        );
     }
 
     public function testGenerateAndValidateToken()
     {
-        $jwt = new JWT();
+        $jwt = new JWT($this->pdo);
         $token = $jwt->generateToken(['user_id' => 5]);
         $this->assertMatchesRegularExpression('/^[^.]+\.[^.]+\.[^.]+$/', $token);
         $payload = $jwt->validateToken($token);
