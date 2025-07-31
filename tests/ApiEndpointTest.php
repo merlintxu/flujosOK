@@ -62,6 +62,22 @@ class ApiEndpointTest extends TestCase
         $this->assertTrue(json_decode($response->getContent(), true)['success']);
     }
 
+    public function testSyncManual()
+    {
+        $controller = new SyncController($this->makeContainer(), $this->makeRequest('POST', '/api/sync/manual'));
+        $response = $controller->manual();
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue(json_decode($response->getContent(), true)['success']);
+    }
+
+    public function testSyncStatus()
+    {
+        $controller = new SyncController($this->makeContainer(), $this->makeRequest('GET', '/api/sync/status'));
+        $response = $controller->status();
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertTrue(json_decode($response->getContent(), true)['success']);
+    }
+
     public function testCallsIndex()
     {
         $controller = new CallsController($this->makeContainer(), $this->makeRequest('GET', '/api/v3/calls'));
