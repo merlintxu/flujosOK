@@ -175,11 +175,19 @@ abstract class BaseController
      */
     protected function getPaginationParams(): array
     {
+        $orderBy = $this->request->get('order_by', 'created_at');
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $orderBy)) {
+            $orderBy = 'created_at';
+        }
+
+        $direction = strtoupper($this->request->get('direction', 'DESC'));
+        $direction = $direction === 'ASC' ? 'ASC' : 'DESC';
+
         return [
             'page' => max(1, (int) $this->request->get('page', 1)),
             'per_page' => min(100, max(10, (int) $this->request->get('per_page', 20))),
-            'order_by' => $this->request->get('order_by', 'created_at'),
-            'direction' => strtoupper($this->request->get('direction', 'DESC'))
+            'order_by' => $orderBy,
+            'direction' => $direction
         ];
     }
     
