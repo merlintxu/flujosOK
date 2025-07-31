@@ -86,6 +86,10 @@ private function registerServices(): void
     // Alias para acceder a la base de datos por nombre
     $this->container->alias(PDO::class, 'database');
 
+    /* ---------- JWT ---------- */
+    $this->container->singleton(JWT::class, fn () => new JWT());
+    $this->container->alias(JWT::class, 'jwtService');
+
     /* ---------- Logger ---------- */
     $this->container->singleton('logger', fn () =>
         new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')

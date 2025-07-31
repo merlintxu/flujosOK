@@ -16,9 +16,9 @@ class TokenController extends BaseController
     public function generate(): Response
     {
         try {
-            if ($this->container->bound(JWT::class)) {
+            if ($this->container->bound(JWT::class) || $this->container->bound('jwtService')) {
                 /** @var JWT $jwt */
-                $jwt = $this->service(JWT::class);
+                $jwt = $this->service('jwtService');
                 $token = $jwt->generateToken();
             } else {
                 $token = bin2hex(random_bytes(16));
@@ -39,9 +39,9 @@ class TokenController extends BaseController
             $this->validate($data, ['token' => 'required|string']);
 
             $valid = true;
-            if ($this->container->bound(JWT::class)) {
+            if ($this->container->bound(JWT::class) || $this->container->bound('jwtService')) {
                 /** @var JWT $jwt */
-                $jwt = $this->service(JWT::class);
+                $jwt = $this->service('jwtService');
                 $valid = (bool) $jwt->validateToken($data['token']);
             } else {
                 $valid = $data['token'] !== '';
@@ -62,9 +62,9 @@ class TokenController extends BaseController
             $this->validate($data, ['token' => 'required|string']);
 
             $revoked = true;
-            if ($this->container->bound(JWT::class)) {
+            if ($this->container->bound(JWT::class) || $this->container->bound('jwtService')) {
                 /** @var JWT $jwt */
-                $jwt = $this->service(JWT::class);
+                $jwt = $this->service('jwtService');
                 $revoked = $jwt->revokeToken($data['token']);
             }
             return $this->jsonResponse(['revoked' => $revoked]);
