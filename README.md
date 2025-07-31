@@ -8,6 +8,8 @@ This project automates the synchronization of Ringover calls with OpenAI process
 - Analyze recordings through OpenAI and store results in the database.
 - Push processed calls to Pipedrive.
 - JWT authenticated API with health and status endpoints.
+- Test Ringover connectivity before syncing.
+- The admin panel is served through standalone scripts, no built-in controller routes.
 
 ## Quick start
 
@@ -42,7 +44,7 @@ Optional: `FTP_PORT` or `FTP_SERVER_DIR` if you need to override defaults.
 - [Installation guide](docs/INSTALL.md)
 - [Project documentation (Spanish)](docs/README_es.md)
 - [API reference](docs/API.md)
-- [Module and class overview](docs/modules.md)
+- [Module and class reference](docs/modules.md)
 
 ## License
 
