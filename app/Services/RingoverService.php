@@ -29,6 +29,23 @@ class RingoverService
     }
 
     /**
+     * Perform a lightweight request to verify API connectivity.
+     *
+     * @return array{success: bool}
+     */
+    public function testConnection(): array
+    {
+        try {
+            $resp = $this->http->request('HEAD', "{$this->baseUrl}/calls", [
+                'headers' => ['Authorization' => $this->apiKey],
+            ]);
+            return ['success' => $resp->getStatusCode() === 200];
+        } catch (\Throwable) {
+            return ['success' => false];
+        }
+    }
+
+    /**
      * Devuelve TODAS las llamadas creadas a partir de $since (UTC).  Generator → baja memoria.
      *
      * @return Generator<array<string,mixed>>

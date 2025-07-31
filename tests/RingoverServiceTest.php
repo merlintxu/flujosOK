@@ -69,4 +69,35 @@ class RingoverServiceTest extends TestCase
         unlink($path);
         rmdir($dir);
     }
+
+    public function testTestConnectionSuccess()
+    {
+        $mock = new MockHandler([new Response(200)]);
+        $history = [];
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        $http = new HttpClient(['handler' => $stack]);
+        $container = new Container();
+        $container->instance('httpClient', $http);
+        $container->instance('config', ['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $service = new RingoverService($container);
+        $result = $service->testConnection();
+        $this->assertTrue($result['success']);
+        $this->assertCount(1, $history);
+        $req = $history[0]['request'];
+        $this->assertSame('HEAD', $req->getMethod());
+    }
+
+    public function testTestConnectionFailure()
+    {
+        $mock = new MockHandler([new Response(500)]);
+        $stack = HandlerStack::create($mock);
+        $http = new HttpClient(['handler' => $stack]);
+        $container = new Container();
+        $container->instance('httpClient', $http);
+        $container->instance('config', ['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $service = new RingoverService($container);
+        $result = $service->testConnection();
+        $this->assertFalse($result['success']);
+    }
 }
