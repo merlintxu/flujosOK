@@ -221,6 +221,7 @@ private function registerServices(): void
         $this->router->group('/api', function($router) {
             $router->get('/status', 'ApiController@status');
             $router->get('/health', 'ApiController@health');
+            $router->post('/webhooks', 'WebhookController@create');
 
             $router->group('/v3', function($router) {
                 // Calls
