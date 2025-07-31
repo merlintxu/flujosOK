@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FlujosDimension\Core;
 
-use FlujosDimension\Core\{Config,Database,JWT};
+use FlujosDimension\Core\{Config,Database,JWT,CacheManager};
 /**
  * Aplicación Principal - Flujos Dimension v4.2
  * Migrado y mejorado desde v3
@@ -80,6 +80,13 @@ private function registerServices(): void
     /* ---------- Configuración y núcleo ---------- */
     $this->container->singleton(Config::class, fn () => $this->config);
     $this->container->alias(Config::class, 'config');
+
+    // Simple file based cache
+    $this->container->singleton(
+        CacheManager::class,
+        fn () => new CacheManager(dirname(__DIR__, 2) . '/storage/cache')
+    );
+    $this->container->alias(CacheManager::class, 'cache');
 
     // Conexión PDO única
     $this->container->singleton(PDO::class, fn () => $this->getDatabaseConnection());
