@@ -72,4 +72,24 @@ class TokenController extends BaseController
             return $this->handleError($e, 'Error revoking token');
         }
     }
+
+    /**
+     * List currently active tokens.
+     */
+    public function active(): Response
+    {
+        try {
+            if (!$this->container->bound(JWT::class) && !$this->container->bound('jwtService')) {
+                return $this->successResponse([]);
+            }
+
+            /** @var JWT $jwt */
+            $jwt = $this->service('jwtService');
+            $tokens = $jwt->getActiveTokens();
+
+            return $this->successResponse($tokens);
+        } catch (\Exception $e) {
+            return $this->handleError($e, 'Error listing active tokens');
+        }
+    }
 }

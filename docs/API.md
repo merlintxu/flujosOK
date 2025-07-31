@@ -24,6 +24,9 @@ Generates a JWT token for API access.
 ### `POST /api/token/validate`
 Validates a token.
 
+### `GET /api/token/active`
+List active tokens issued by the system.
+
 ### `GET /api/calls`
 List calls. Parameters: `limit`, `offset`, `date`.
 
