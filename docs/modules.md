@@ -241,7 +241,7 @@ POST /api/users
 ```
 
 ### WebhookController
-Placeholder for webhook registration.
+Handles registration of external webhooks.
 
 **Major methods**
 
@@ -250,7 +250,9 @@ Placeholder for webhook registration.
 **Example**
 
 ```bash
-POST /api/webhooks
+curl -X POST /api/webhooks \
+  -d "url=https://example.com/hook" \
+  -d "event=call.finished"
 ```
 
 ## Services
@@ -382,5 +384,6 @@ Two CLI tasks are included using the Symfony Console component:
 Run them with:
 
 ```bash
-vendor/bin/console <command>
+vendor/bin/console sync:hourly
+vendor/bin/console token:cleanup
 ```

@@ -24,3 +24,29 @@ Configura `ADMIN_USER` y `ADMIN_PASS` en tu archivo `.env` y accede a
 un token CSRF para las peticiones de la interfaz.
 
 Consulta [docs/INSTALL.md](INSTALL.md) para más detalles en inglés.
+
+### Comandos de consola
+
+Se incluyen dos tareas programadas a trav\u00e9s de Symfony Console:
+
+- `sync:hourly` importa las llamadas recientes de Ringover.
+- `token:cleanup` elimina los tokens expirados.
+
+Ejemplo de uso:
+
+```bash
+vendor/bin/console sync:hourly
+vendor/bin/console token:cleanup
+```
+
+### Endpoint de webhooks
+
+El API permite registrar webhooks externos mediante:
+
+`POST /api/webhooks`
+
+```bash
+curl -X POST https://localhost/api/webhooks \
+  -d "url=https://ejemplo.com/hook" \
+  -d "event=call.finished"
+```
