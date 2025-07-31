@@ -14,6 +14,31 @@ class WebhookController extends BaseController
      */
     public function create(): Response
     {
-        return $this->jsonResponse(['success' => true, 'id' => 'webhook_1']);
+        try {
+            $data = $this->request->all();
+
+            $this->validate($data, [
+                'url'   => 'required|string',
+                'event' => 'required|string',
+            ]);
+
+            if (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
+                throw new \InvalidArgumentException('Invalid URL');
+            }
+
+            $data['created_at'] = date('Y-m-d H:i:s');
+
+            if ($this->container->bound(\FlujosDimension\Models\Webhook::class)) {
+                /** @var \FlujosDimension\Models\Webhook $model */
+                $model  = $this->service(\FlujosDimension\Models\Webhook::class);
+                $created = $model->create($data);
+
+                return $this->jsonResponse(['success' => true, 'data' => $created], 201);
+            }
+
+            return $this->jsonResponse(['success' => true], 201);
+        } catch (\Exception $e) {
+            return $this->handleError($e, 'Error creating webhook');
+        }
     }
 }
