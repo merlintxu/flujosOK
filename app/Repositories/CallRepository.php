@@ -85,4 +85,82 @@ final class CallRepository
         );
         $stmt->execute([':dealId' => $dealId, ':id' => $id]);
     }
+
+    /** Aggregate global stats since the given date */
+    public function summarySince(\DateTimeInterface $since): array
+    {
+        $sql = 'SELECT
+                    COUNT(*)                                   AS total_calls,
+                    COUNT(CASE WHEN status = "answered" THEN 1 END) AS answered_calls,
+                    COUNT(CASE WHEN status = "missed" THEN 1 END)   AS missed_calls,
+                    COUNT(CASE WHEN direction = "inbound" THEN 1 END)  AS inbound_calls,
+                    COUNT(CASE WHEN direction = "outbound" THEN 1 END) AS outbound_calls,
+                    AVG(CASE WHEN status = "answered" THEN duration END) AS avg_duration
+                FROM calls
+                WHERE created_at >= :since';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':since', $since->format('Y-m-d H:i:s'));
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total_calls'    => (int)($row['total_calls'] ?? 0),
+            'answered_calls' => (int)($row['answered_calls'] ?? 0),
+            'missed_calls'   => (int)($row['missed_calls'] ?? 0),
+            'inbound_calls'  => (int)($row['inbound_calls'] ?? 0),
+            'outbound_calls' => (int)($row['outbound_calls'] ?? 0),
+            'avg_duration'   => (float)($row['avg_duration'] ?? 0),
+        ];
+    }
+
+    /** Daily call trends since the given date */
+    public function trendsSince(\DateTimeInterface $since): array
+    {
+        $sql = 'SELECT
+                    DATE(created_at) AS dt,
+                    COUNT(*) AS total_calls,
+                    COUNT(CASE WHEN status = "answered" THEN 1 END) AS answered_calls,
+                    COUNT(CASE WHEN status = "missed" THEN 1 END) AS missed_calls,
+                    AVG(duration) AS avg_duration
+                FROM calls
+                WHERE created_at >= :since
+                GROUP BY DATE(created_at)
+                ORDER BY DATE(created_at) ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':since', $since->format('Y-m-d H:i:s'));
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(
+            static fn(array $r) => [
+                'date'           => $r['dt'],
+                'total_calls'    => (int)$r['total_calls'],
+                'answered_calls' => (int)$r['answered_calls'],
+                'missed_calls'   => (int)$r['missed_calls'],
+                'avg_duration'   => (float)($r['avg_duration'] ?? 0),
+            ],
+            $rows
+        );
+    }
+
+    /** Recent calls since the given date */
+    public function recentSince(\DateTimeInterface $since, int $limit = 10): array
+    {
+        $sql = 'SELECT id, phone_number, direction, status, duration, ai_sentiment, created_at
+                FROM calls
+                WHERE created_at >= :since
+                ORDER BY created_at DESC
+                LIMIT :limit';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':since', $since->format('Y-m-d H:i:s'));
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
