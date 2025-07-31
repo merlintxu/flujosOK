@@ -153,6 +153,7 @@ Handles JSON Web Tokens for the API.
 - `generate()` issues a token.
 - `verify()` checks token validity.
 - `revoke()` invalidates a token.
+- `active()` lists active tokens.
 
 **Example**
 

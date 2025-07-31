@@ -54,6 +54,29 @@ class ApiEndpointTest extends TestCase
         $this->assertTrue(json_decode($valResponse->getContent(), true)['valid']);
     }
 
+    public function testTokenActive()
+    {
+        $container = $this->makeContainer();
+        $container->instance('jwtService', new class {
+            public function getActiveTokens() {
+                return [[
+                    'id' => 1,
+                    'name' => 'demo',
+                    'expires_at' => '2030-01-01 00:00:00',
+                    'last_used_at' => null,
+                    'created_at' => '2024-01-01 00:00:00'
+                ]];
+            }
+        });
+        $controller = new TokenController($container, $this->makeRequest('GET', '/api/token/active'));
+        $response = $controller->active();
+        $this->assertSame(200, $response->getStatusCode());
+        $data = json_decode($response->getContent(), true);
+        $this->assertTrue($data['success']);
+        $this->assertIsArray($data['data']);
+        $this->assertArrayHasKey('id', $data['data'][0]);
+    }
+
     public function testSyncHourly()
     {
         $controller = new SyncController($this->makeContainer(), $this->makeRequest('POST', '/api/sync/hourly'));

@@ -262,6 +262,7 @@ private function registerServices(): void
                 $router->get('/sync/status', 'SyncController@status');
                 $router->post('/token/generate', 'TokenController@generate');
                 $router->post('/token/validate', 'TokenController@verify');
+                $router->get('/token/active', 'TokenController@active');
                 $router->delete('/token/revoke', 'TokenController@revoke');
             });
         });
