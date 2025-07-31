@@ -112,7 +112,7 @@ class DashboardControllerTest extends TestCase
 
         $pdo = new \PDO('sqlite::memory:');
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ringover_id TEXT, phone_number TEXT, direction TEXT, status TEXT, duration INTEGER, recording_url TEXT, ai_sentiment TEXT, created_at TEXT)");
+        $pdo->exec("CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ringover_id TEXT, phone_number TEXT, direction TEXT, status TEXT, duration INTEGER, recording_url TEXT, ai_keywords TEXT, ai_sentiment TEXT, created_at TEXT)");
 
         $now = new \DateTimeImmutable();
         $stmt = $pdo->prepare("INSERT INTO calls (ringover_id, phone_number, direction, status, duration, ai_sentiment, created_at) VALUES (?,?,?,?,?,?,?)");

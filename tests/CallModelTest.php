@@ -25,6 +25,7 @@ class CallModelTest extends TestCase
                 recording_url TEXT,
                 ai_transcription TEXT,
                 ai_summary TEXT,
+                ai_keywords TEXT,
                 ai_sentiment TEXT,
                 pipedrive_contact_id INTEGER,
                 pipedrive_deal_id INTEGER,

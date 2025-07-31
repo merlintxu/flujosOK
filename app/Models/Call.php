@@ -15,8 +15,8 @@ class Call extends BaseModel
     protected string $table = 'calls';
     protected array $fillable = [
         'ringover_id', 'phone_number', 'direction', 'status', 'duration',
-        'recording_url', 'ai_transcription', 'ai_summary', 'ai_sentiment',
-        'pipedrive_contact_id', 'pipedrive_deal_id'
+        'recording_url', 'ai_transcription', 'ai_summary', 'ai_keywords',
+        'ai_sentiment', 'pipedrive_contact_id', 'pipedrive_deal_id'
     ];
     
     protected array $casts = [
@@ -296,14 +296,30 @@ class Call extends BaseModel
      */
     public function updateAITranscription(int $id, string $transcription): bool
     {
-        $sql = "UPDATE {$this->table} 
-                SET ai_transcription = :transcription, updated_at = NOW() 
+        $sql = "UPDATE {$this->table}
+                SET ai_transcription = :transcription, updated_at = NOW()
                 WHERE id = :id";
         
         $stmt = $this->database->prepare($sql);
         return $stmt->execute([
             'id' => $id,
             'transcription' => $transcription
+        ]);
+    }
+
+    /**
+     * Update AI generated keywords
+     */
+    public function updateAIKeywords(int $id, string $keywords): bool
+    {
+        $sql = "UPDATE {$this->table}
+                SET ai_keywords = :keywords, updated_at = NOW()
+                WHERE id = :id";
+
+        $stmt = $this->database->prepare($sql);
+        return $stmt->execute([
+            'id' => $id,
+            'keywords' => $keywords
         ]);
     }
     
