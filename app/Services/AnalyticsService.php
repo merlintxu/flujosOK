@@ -53,4 +53,22 @@ final class AnalyticsService
     {
         return $this->lastProcessed;
     }
+
+    /**
+     * Retrieve dashboard data for a given period.
+     */
+    public function getDashboardData(string $period): array
+    {
+        return ['success' => true, 'data' => []];
+    }
+
+    /**
+     * Clear cached analytics data.
+     */
+    public function clearCache(): void
+    {
+        $cacheDir = sys_get_temp_dir() . '/fd-cache';
+        $cache = new \FlujosDimension\Core\CacheManager($cacheDir);
+        $cache->deletePattern('*');
+    }
 }

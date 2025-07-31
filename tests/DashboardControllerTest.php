@@ -24,10 +24,25 @@ class DashboardDbStub {
         private array $r; public function __construct($r){$this->r=$r;} public function fetchAll(){return $this->r;} public function fetch(){return $this->r;}
     }; }
 }
-class DummyLogger { public function error($m){} }
+class DummyLogger { public function error($m){} public function info($m,$c=[]){} }
 
 class DummyRingover extends RingoverService {
     public function __construct() {}
+    public function testConnection(): array { return ['success' => true]; }
+}
+
+
+class DummyDbForSystemInfo {
+    public function query($sql) {
+        if (str_contains($sql, 'COUNT')) {
+            return new class { public function fetch() { return ['total_calls' => 0]; } };
+        }
+        if (str_contains($sql, 'MAX')) {
+            return new class { public function fetch() { return ['last_call' => null]; } };
+        }
+        return new class { public function fetch() { return []; } public function fetchAll() { return []; } };
+    }
+    public function prepare($sql) { return new class { public function execute($p = []) {} public function fetch() { return []; } }; }
 }
 
 class DashboardControllerTest extends TestCase
@@ -60,5 +75,31 @@ class DashboardControllerTest extends TestCase
         $data = json_decode($prop->getValue($response), true);
         $this->assertTrue($data['success']);
         $this->assertSame(5, $data['data']['today']['total_calls']);
+    }
+
+    public function testIndexRefreshClearsCache()
+    {
+        $container = new Container();
+        $container->instance('logger', new DummyLogger());
+        $container->instance('config', []);
+        $container->instance('database', new DummyDbForSystemInfo());
+        $pdo = new \PDO('sqlite::memory:');
+        $repo = new CallRepository($pdo);
+        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $analytics = new AnalyticsService($repo, $openai);
+        $cacheDir = sys_get_temp_dir() . '/fd-cache';
+        if (!is_dir($cacheDir)) { mkdir($cacheDir); }
+        file_put_contents($cacheDir . '/test.cache', 'x');
+        $container->instance('analyticsService', $analytics);
+        $container->instance('ringoverService', new DummyRingover());
+
+        $_GET = ['refresh' => '1'];
+        $_POST = [];
+        $_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'];
+        $controller = new DashboardController($container, new Request());
+        $response = $controller->index();
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertCount(0, glob($cacheDir . '/*.cache'));
+        @rmdir($cacheDir);
     }
 }
