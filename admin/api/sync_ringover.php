@@ -1,21 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../auth.php';
-requireApiAuth();
-
-require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
-$container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
-
-use FlujosDimension\Core\JWT;
-use FlujosDimension\Core\Request;
-
-header('Content-Type: application/json');
+require __DIR__ . '/init.php';
 
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
-
-$request = new Request();
 
 /** @var RingoverService $ringover */
 $ringover = $container->resolve(RingoverService::class);
@@ -23,7 +12,7 @@ $ringover = $container->resolve(RingoverService::class);
 $repo     = $container->resolve('callRepository');
 
 $since    = new DateTimeImmutable('-1 hour');
-$download = filter_var($request->post('download', false), FILTER_VALIDATE_BOOLEAN);
+$download = post_bool($request, 'download', false);
 $inserted = 0;
 
 try {
