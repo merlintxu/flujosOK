@@ -19,4 +19,15 @@ class ApplicationBindingsTest extends TestCase
             restore_exception_handler();
         }
     }
+
+    public function testCacheServiceIsManager()
+    {
+        $app = new Application();
+        try {
+            $this->assertInstanceOf(CacheManager::class, $app->service('cache'));
+        } finally {
+            restore_error_handler();
+            restore_exception_handler();
+        }
+    }
 }
