@@ -259,15 +259,9 @@ private function registerServices(): void
             });
         });
         
-        // Admin Routes
-        $this->router->group('/admin', function($router) {
-            $router->get('/', 'AdminController@dashboard');
-            $router->get('/login', 'AdminController@login');
-            $router->post('/login', 'AdminController@authenticate');
-            $router->get('/logout', 'AdminController@logout');
-            $router->get('/env-editor', 'AdminController@envEditor');
-            $router->post('/env-save', 'AdminController@envSave');
-        });
+        // Admin routes are handled by standalone scripts in the `admin/`
+        // directory. Remove these entries until a dedicated controller is
+        // implemented.
     }
     
     /**
