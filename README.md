@@ -36,6 +36,11 @@ Expired tokens can also be purged with the cleanup command:
 vendor/bin/console token:cleanup
 ```
 
+See [console commands](docs/modules.md#console-commands) for more details.
+
+Webhook registration is documented in
+[docs/API.md#post-apiwebhooks](docs/API.md#post-apiwebhooks).
+
 ### Admin login
 
 The admin panel located in the `admin/` directory requires session-based
