@@ -372,3 +372,15 @@ $repo->insertOrIgnore($call);
 The `admin` directory provides a small web dashboard implemented with PHP scripts. These pages manage authentication, generate tokens, trigger synchronizations and render HTML views for configuration tasks.
 
 The admin utilities load a lightweight bootstrap file located at `app/bootstrap/container.php`. This script now creates an `Application` instance and exposes its service container so bindings stay identical to the main runtime. Built-in admin routes were removed from the application kernel; all admin functionality lives in these scripts until a dedicated controller is introduced.
+
+## Console commands
+Two CLI tasks are included using the Symfony Console component:
+
+- `sync:hourly` imports the latest Ringover calls.
+- `token:cleanup` removes expired API tokens.
+
+Run them with:
+
+```bash
+vendor/bin/console <command>
+```
