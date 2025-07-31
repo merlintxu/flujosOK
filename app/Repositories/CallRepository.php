@@ -85,4 +85,61 @@ final class CallRepository
         );
         $stmt->execute([':dealId' => $dealId, ':id' => $id]);
     }
+
+    /**
+     * Get aggregated statistics for a date range grouped by day.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function callTrends(\DateTimeInterface $start, \DateTimeInterface $end): array
+    {
+        $sql = 'SELECT DATE(created_at) AS date,
+                       COUNT(*) AS total_calls,
+                       COUNT(CASE WHEN status = "answered" OR is_answered = 1 THEN 1 END) AS answered_calls,
+                       COUNT(*) - COUNT(CASE WHEN status = "answered" OR is_answered = 1 THEN 1 END) AS missed_calls,
+                       AVG(duration) AS avg_duration
+                FROM calls
+                WHERE created_at BETWEEN :start AND :end
+                GROUP BY DATE(created_at)
+                ORDER BY DATE(created_at) ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':start' => $start->format('Y-m-d H:i:s'),
+            ':end'   => $end->format('Y-m-d H:i:s'),
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Quick statistics for a period.
+     *
+     * @return array<string,mixed>
+     */
+    public function summary(\DateTimeInterface $start, \DateTimeInterface $end): array
+    {
+        $sql = 'SELECT COUNT(*) AS total_calls,
+                       COUNT(CASE WHEN status = "answered" OR is_answered = 1 THEN 1 END) AS answered_calls,
+                       COUNT(CASE WHEN direction = "inbound" THEN 1 END) AS inbound_calls,
+                       COUNT(CASE WHEN direction = "outbound" THEN 1 END) AS outbound_calls,
+                       AVG(duration) AS avg_duration
+                FROM calls
+                WHERE created_at BETWEEN :start AND :end';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':start' => $start->format('Y-m-d H:i:s'),
+            ':end'   => $end->format('Y-m-d H:i:s'),
+        ]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: [
+            'total_calls'    => 0,
+            'answered_calls' => 0,
+            'inbound_calls'  => 0,
+            'outbound_calls' => 0,
+            'avg_duration'   => 0,
+        ];
+    }
 }

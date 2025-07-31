@@ -59,7 +59,27 @@ final class AnalyticsService
      */
     public function getDashboardData(string $period): array
     {
-        return ['success' => true, 'data' => []];
+        $now = new \DateTimeImmutable();
+
+        if (preg_match('/^(\d+)([dh])$/', $period, $m)) {
+            [$_, $num, $unit] = $m;
+            $interval = $unit === 'h' ? "PT{$num}H" : "P{$num}D";
+            $start = $now->sub(new \DateInterval($interval));
+        } else {
+            $start = $now->sub(new \DateInterval('P1D'));
+        }
+
+        $trends = $this->repo->callTrends($start, $now);
+        $summary = $this->repo->summary($start, $now);
+
+        return [
+            'success' => true,
+            'data' => [
+                'call_trends' => $trends,
+                'quick_stats' => $summary,
+                'last_updated' => $now->format('Y-m-d H:i:s'),
+            ],
+        ];
     }
 
     /**

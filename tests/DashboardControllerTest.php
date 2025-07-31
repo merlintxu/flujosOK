@@ -102,4 +102,48 @@ class DashboardControllerTest extends TestCase
         $this->assertCount(0, glob($cacheDir . '/*.cache'));
         @rmdir($cacheDir);
     }
+
+    public function testIndexReturnsDashboardData()
+    {
+        $container = new Container();
+        $container->instance('logger', new DummyLogger());
+        $container->instance('config', []);
+        $container->instance('database', new DummyDbForSystemInfo());
+
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT,
+            direction TEXT,
+            status TEXT,
+            is_answered INTEGER,
+            duration INTEGER
+        )");
+        $now = date('Y-m-d H:i:s');
+        $pdo->exec("INSERT INTO calls (created_at, direction, status, is_answered, duration) VALUES
+            ('$now','inbound','answered',1,60),
+            ('$now','outbound','no_answer',0,0)");
+
+        $repo = new CallRepository($pdo);
+        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $analytics = new AnalyticsService($repo, $openai);
+        $container->instance('analyticsService', $analytics);
+        $container->instance('ringoverService', new DummyRingover());
+
+        $_GET = [];
+        $_POST = [];
+        $_SERVER = ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/'];
+        $controller = new DashboardController($container, new Request());
+        $response = $controller->index();
+
+        $this->assertInstanceOf(Response::class, $response);
+        $ref = new \ReflectionClass($response);
+        $prop = $ref->getProperty('content');
+        $prop->setAccessible(true);
+        $data = json_decode($prop->getValue($response), true);
+        $this->assertTrue($data['success']);
+        $this->assertNotEmpty($data['data']['call_trends']);
+        $this->assertSame(2, $data['data']['quick_stats']['total_calls']);
+    }
 }
