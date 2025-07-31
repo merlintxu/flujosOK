@@ -113,4 +113,25 @@ class AdminApiTest extends TestCase
         $this->assertTrue($r['data']['success']);
         $this->assertSame(5, $r['data']['processed']);
     }
+
+    public function testSyncRingoverInvalidDownload()
+    {
+        $r = $this->runScript('sync_ringover.php', ['download' => 'abc']);
+        $this->assertSame(400, $r['code']);
+        $this->assertFalse($r['data']['success']);
+    }
+
+    public function testBatchOpenaiInvalidMax()
+    {
+        $r = $this->runScript('batch_openai.php', ['max' => 'foo']);
+        $this->assertSame(400, $r['code']);
+        $this->assertFalse($r['data']['success']);
+    }
+
+    public function testPushPipedriveInvalidLimit()
+    {
+        $r = $this->runScript('push_pipedrive.php', ['limit' => '-1']);
+        $this->assertSame(400, $r['code']);
+        $this->assertFalse($r['data']['success']);
+    }
 }

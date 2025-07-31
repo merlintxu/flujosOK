@@ -11,8 +11,18 @@ $ringover = $container->resolve(RingoverService::class);
 /** @var CallRepository $repo */
 $repo     = $container->resolve('callRepository');
 
-$since    = new DateTimeImmutable('-1 hour');
-$download = post_bool($request, 'download', false);
+$params   = validate_input($request, [
+    'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
+    'since'    => ['filter' => FILTER_SANITIZE_STRING]
+]);
+
+$download = $params['download'] ?? false;
+
+$sinceStr = $params['since'] ?? '-1 hour';
+$since    = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string)$sinceStr) ?: new \DateTimeImmutable((string)$sinceStr);
+if (!$since) {
+    respond_error('Invalid since parameter');
+}
 $inserted = 0;
 
 try {
