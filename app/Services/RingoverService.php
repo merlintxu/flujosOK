@@ -82,7 +82,19 @@ class RingoverService
             throw new RuntimeException('Failed to download recording');
         }
 
-        $filename = $dir . '/' . basename(parse_url($url, PHP_URL_PATH));
+        $path     = parse_url($url, PHP_URL_PATH) ?: '';
+        $basename = basename($path);
+
+        // sanitize directory traversal characters
+        $basename = str_replace(['..', '/', '\\'], '', $basename);
+
+        $extension = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
+        $allowed   = ['mp3', 'wav', 'ogg', 'm4a'];
+        if ($extension === '' || !in_array($extension, $allowed, true)) {
+            throw new RuntimeException('Invalid recording extension');
+        }
+
+        $filename = $dir . '/' . $basename;
         file_put_contents($filename, (string) $resp->getBody());
         return $filename;
     }

@@ -51,4 +51,22 @@ class RingoverServiceTest extends TestCase
         unlink($path);
         rmdir($dir);
     }
+
+    public function testDownloadRecordingSanitizesPath()
+    {
+        $mock = new MockHandler([new Response(200, [], 'audio')]);
+        $stack = HandlerStack::create($mock);
+        $http = new HttpClient(['handler' => $stack]);
+        $container = new Container();
+        $container->instance('httpClient', $http);
+        $container->instance('config', ['RINGOVER_API_TOKEN' => 't']);
+        $service = new RingoverService($container);
+        $dir = sys_get_temp_dir().'/ringtest';
+        $malicious = 'https://files.test/..%2Fsecret/evil.mp3';
+        $path = $service->downloadRecording($malicious, $dir);
+        $this->assertStringStartsWith($dir, $path);
+        $this->assertFileExists($path);
+        unlink($path);
+        rmdir($dir);
+    }
 }
