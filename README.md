@@ -21,6 +21,15 @@ cp .env.example .env
 php -S localhost:8000 -t public
 ```
 
+### Console usage
+
+An hourly synchronization task is available as a command line tool. Execute it
+via Composer's binary to import the latest calls:
+
+```bash
+vendor/bin/console sync:hourly
+```
+
 ### Admin login
 
 The admin panel located in the `admin/` directory requires session-based
