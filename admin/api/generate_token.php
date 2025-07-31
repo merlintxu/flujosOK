@@ -1,37 +1,18 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../auth.php';
-requireApiAuth();
+require __DIR__ . '/init.php';
 
-require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
-$container = require dirname(__DIR__, 2) . '/app/bootstrap/container.php';
 
-use FlujosDimension\Core\JWT;
-use FlujosDimension\Core\Request;
-use InvalidArgumentException;
-
-header('Content-Type: application/json');
-
-$request = new Request();
-
-try {
-    $request->validate(['token_name']);
-} catch (InvalidArgumentException $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    exit;
-}
+validate_fields($request, ['token_name']);
 
 /* ---------- lógica ---------- */
-$name     = htmlspecialchars(trim((string)$request->post('token_name', 'Token API')), ENT_QUOTES, 'UTF-8');
+$name     = sanitize_string((string)$request->post('token_name', 'Token API'));
 $duration = $request->post('duration', 'indefinite');
 
 $allowedDurations = ['1hour','1day','1week','1month','1year','indefinite'];
 if (!in_array($duration, $allowedDurations, true)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid duration']);
-    exit;
+    respond_error('Invalid duration');
 }
 
 $seconds  = match($duration){
@@ -44,7 +25,8 @@ $seconds  = match($duration){
 };
 
 try {
-    $jwt = new JWT();
+    /** @var FlujosDimension\Core\JWT $jwt */
+    $jwt = $container->resolve('jwtService');
     $payload = ['name' => $name, 'type' => 'api_access'];
     if ($seconds) {
         $payload['exp'] = time() + $seconds;
