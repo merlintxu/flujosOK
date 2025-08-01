@@ -130,6 +130,17 @@ private function registerServices(): void
         'callRepository'
     );
 
+    $this->container->singleton(
+        \FlujosDimension\Repositories\SyncHistoryRepository::class,
+        fn ($c) => new \FlujosDimension\Repositories\SyncHistoryRepository(
+            $c->resolve(PDO::class)
+        )
+    );
+    $this->container->alias(
+        \FlujosDimension\Repositories\SyncHistoryRepository::class,
+        'syncHistoryRepository'
+    );
+
     /* ---------- Integraciones externas ---------- */
     // OpenAI
     $this->container->singleton(
