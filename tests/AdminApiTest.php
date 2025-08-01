@@ -31,6 +31,7 @@ class AdminApiTest extends TestCase
         $this->container->instance(PipedriveService::class, new class {
             public function findPersonByPhone($p){ return 1; }
             public function createOrUpdateDeal($d){ return 7; }
+            public function findOpenDeal($id, $phone = null){ return null; }
         });
         $this->container->alias(PipedriveService::class, 'pipedriveService');
 
@@ -133,5 +134,32 @@ class AdminApiTest extends TestCase
         $r = $this->runScript('push_pipedrive.php', ['limit' => '-1']);
         $this->assertSame(400, $r['code']);
         $this->assertFalse($r['data']['success']);
+    }
+
+    public function testPushPipedriveSkipsExistingDeal()
+    {
+        $repo = new class {
+            public array $synced = [];
+            public function callsNotInCrm() { return [['id'=>2,'phone_number'=>'555']]; }
+            public function markCrmSynced($id,$dealId){ $this->synced[] = [$id,$dealId]; }
+            public function insertOrIgnore($call) {}
+        };
+
+        $crm = new class {
+            public int $created = 0;
+            public function findPersonByPhone($p){ return 1; }
+            public function createOrUpdateDeal($d){ $this->created++; return 9; }
+            public function findOpenDeal($id,$phone=null){ return 42; }
+        };
+
+        $this->container->instance('callRepository', $repo);
+        $this->container->instance(PipedriveService::class, $crm);
+
+        $r = $this->runScript('push_pipedrive.php');
+        $this->assertSame(200, $r['code']);
+        $this->assertTrue($r['data']['success']);
+        $this->assertSame(0, $r['data']['deals']);
+        $this->assertSame([[2,42]], $repo->synced);
+        $this->assertSame(0, $crm->created);
     }
 }

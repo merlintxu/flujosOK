@@ -25,6 +25,12 @@ if ($limit !== null) {
 $created = 0;
 
 foreach ($pending as $c) {
+    $dealId = $crm->findOpenDeal((string)$c['id'], $c['phone_number'] ?? null);
+    if ($dealId !== null) {
+        $repo->markCrmSynced($c['id'], $dealId);
+        continue;
+    }
+
     // Skip Pipedrive person search when no phone number is available
     if (!empty($c['phone_number'])) {
         $personId = $crm->findPersonByPhone($c['phone_number']) ?? null;
