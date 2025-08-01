@@ -345,12 +345,12 @@ Model for the `calls` table.
 
 - `getStats()` aggregated call metrics.
 - `search(term)` filter by phone or text.
-- `markCrmSynced(id)` update CRM status.
+- `markCrmSynced(id, dealId)` update CRM status.
 
 **Example**
 
 ```php
-$call->markCrmSynced($id);
+$call->markCrmSynced($id, $dealId);
 ```
 
 ## Repositories
@@ -364,7 +364,7 @@ Data access layer for call records.
 - `pending(max)` list calls pending AI analysis.
 - `saveBatch(calls, choices)` persist OpenAI results.
 - `insertOrIgnore(call)` deduplicate on import.
-- `markCrmSynced(id)` mark as synced with Pipedrive.
+- `markCrmSynced(id, dealId)` mark as synced with Pipedrive.
 
 **Example**
 
