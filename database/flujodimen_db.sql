@@ -112,7 +112,7 @@ INSERT INTO `api_monitoring` (`id`, `api_name`, `endpoint`, `response_time`, `st
 
 CREATE TABLE `api_tokens` (
   `id` int(11) NOT NULL,
-  `token` varchar(255) NOT NULL,
+  `token_hash` varchar(255) NOT NULL,
   `name` varchar(100) DEFAULT NULL,
   `expires_at` timestamp NULL DEFAULT NULL,
   `last_used_at` timestamp NULL DEFAULT NULL,
@@ -788,8 +788,8 @@ ALTER TABLE `api_monitoring`
 --
 ALTER TABLE `api_tokens`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `token_hash` (`token`),
-  ADD KEY `idx_token_hash` (`token`),
+  ADD UNIQUE KEY `token_hash` (`token_hash`),
+  ADD KEY `idx_token_hash` (`token_hash`),
   ADD KEY `idx_expires_at` (`expires_at`);
 
 --
