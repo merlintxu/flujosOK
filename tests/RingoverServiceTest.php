@@ -10,6 +10,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use FlujosDimension\Infrastructure\Http\HttpClient;
+use RuntimeException;
 
 class RingoverServiceTest extends TestCase
 {
@@ -68,6 +69,37 @@ class RingoverServiceTest extends TestCase
         $this->assertFileExists($path);
         unlink($path);
         rmdir($dir);
+    }
+
+    public function testDownloadRecordingHonorsSizeLimit()
+    {
+        $data = str_repeat('a', 1024 * 1024 + 1);
+        $mock = new MockHandler([new Response(200, [], $data)]);
+        $stack = HandlerStack::create($mock);
+        $http = new HttpClient(['handler' => $stack]);
+        $container = new Container();
+        $container->instance('httpClient', $http);
+        $container->instance('config', [
+            'RINGOVER_API_TOKEN' => 't',
+            'RINGOVER_MAX_RECORDING_MB' => 1
+        ]);
+        $service = new RingoverService($container);
+        $dir = sys_get_temp_dir().'/ringtest';
+
+        try {
+            $service->downloadRecording('https://files.test/big.mp3', $dir);
+            $this->fail('Expected exception not thrown');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('size', $e->getMessage());
+        }
+
+        $file = $dir.'/big.mp3';
+        if (file_exists($file)) {
+            unlink($file);
+        }
+        if (is_dir($dir)) {
+            rmdir($dir);
+        }
     }
 
     public function testTestConnectionSuccess()
