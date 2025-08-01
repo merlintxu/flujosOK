@@ -307,7 +307,9 @@ Client for the Ringover API.
 **Major methods**
 
 - `getCalls(since)` stream call data with pagination.
-- `downloadRecording(url)` save a recording locally.
+- `downloadRecording(url)` stream a recording to disk. The
+  download aborts if the file exceeds the configurable
+  `RINGOVER_MAX_RECORDING_MB` limit.
 - `testConnection()` verify API availability and is used by the dashboard health checks.
 
 **Example**

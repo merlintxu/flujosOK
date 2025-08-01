@@ -16,6 +16,7 @@ class RingoverService
     private HttpClient $http;
     private string     $apiKey;
     private string     $baseUrl;
+    private int       $maxSize;
 
     /**
      * Prepare HTTP client and configuration values.
@@ -26,6 +27,8 @@ class RingoverService
         $config        = $c->resolve('config');
         $this->apiKey  = $config['RINGOVER_API_TOKEN'] ?? '';
         $this->baseUrl = $config['RINGOVER_API_URL']  ?? 'https://public-api.ringover.com/v2';
+        $limitMb       = (int)($config['RINGOVER_MAX_RECORDING_MB'] ?? 100);
+        $this->maxSize = $limitMb * 1024 * 1024;
     }
 
     /**
@@ -112,7 +115,23 @@ class RingoverService
         }
 
         $filename = $dir . '/' . $basename;
-        file_put_contents($filename, (string) $resp->getBody());
+
+        $body = $resp->getBody();
+        $fp   = fopen($filename, 'wb');
+        $total = 0;
+
+        while (!$body->eof()) {
+            $chunk = $body->read(8192);
+            $total += strlen($chunk);
+            if ($total > $this->maxSize) {
+                fclose($fp);
+                unlink($filename);
+                throw new RuntimeException('Recording exceeds size limit');
+            }
+            fwrite($fp, $chunk);
+        }
+
+        fclose($fp);
         return $filename;
     }
 }

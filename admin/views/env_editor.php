@@ -304,14 +304,19 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="RINGOVER_API_URL">URL de API Ringover</label>
-                        <input type="url" id="RINGOVER_API_URL" name="RINGOVER_API_URL" 
+                        <input type="url" id="RINGOVER_API_URL" name="RINGOVER_API_URL"
                                value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2')); ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="RINGOVER_API_TOKEN">Token de API Ringover</label>
-                        <input type="text" id="RINGOVER_API_TOKEN" name="RINGOVER_API_TOKEN" 
+                        <input type="text" id="RINGOVER_API_TOKEN" name="RINGOVER_API_TOKEN"
                                value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_TOKEN', '')); ?>" required>
                         <button type="button" class="test-btn" onclick="testRingoverApi()">Probar</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="RINGOVER_MAX_RECORDING_MB">Tamaño máximo grabación (MB)</label>
+                        <input type="number" id="RINGOVER_MAX_RECORDING_MB" name="RINGOVER_MAX_RECORDING_MB"
+                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_MAX_RECORDING_MB', '100')); ?>" required>
                     </div>
                 </div>
                 

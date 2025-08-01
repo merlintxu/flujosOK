@@ -17,7 +17,9 @@ This project automates the synchronization of Ringover calls with OpenAI process
 composer install
 cp .env.example .env
 # Edit `.env` and set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASS`
-# along with your API credentials
+# along with your API credentials. The variable
+# `RINGOVER_MAX_RECORDING_MB` limits the size of downloaded
+# recordings (default 100).
 php -S localhost:8000 -t public
 ```
 
