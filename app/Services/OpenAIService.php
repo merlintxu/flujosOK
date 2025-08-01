@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace FlujosDimension\Services;
 
 use FlujosDimension\Infrastructure\Http\HttpClient;
+use FlujosDimension\Core\Config;
 use RuntimeException;
 
 /**
@@ -12,15 +13,17 @@ use RuntimeException;
 final class OpenAIService
 {
     private const BASE = 'https://api.openai.com/v1';
+    private string $model;
 
     /**
-     * Configure the HTTP client, API key and model.
+     * Configure the HTTP client and API key.
      */
     public function __construct(
         private readonly HttpClient $http,
-        private readonly string     $apiKey,
-        private readonly string     $model = 'gpt-4o-mini'
-    ) {}
+        private readonly string     $apiKey
+    ) {
+        $this->model = Config::getInstance()->get('OPENAI_MODEL', 'gpt-4o-transcribe');
+    }
 
     /** @return array<string,mixed> */
     public function chat(array $messages, array $extra = []): array

@@ -56,6 +56,7 @@ class DashboardControllerTest extends TestCase
         ]);
         $container->instance('logger', new DummyLogger());
         $container->instance('config', []);
+        \FlujosDimension\Core\Config::getInstance()->set('OPENAI_MODEL', 'model-x');
         $container->instance('database', $db);
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
@@ -82,6 +83,7 @@ class DashboardControllerTest extends TestCase
         $container = new Container();
         $container->instance('logger', new DummyLogger());
         $container->instance('config', []);
+        \FlujosDimension\Core\Config::getInstance()->set('OPENAI_MODEL', 'model-x');
         $container->instance('database', new DummyDbForSystemInfo());
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
@@ -108,6 +110,7 @@ class DashboardControllerTest extends TestCase
         $container = new Container();
         $container->instance('logger', new DummyLogger());
         $container->instance('config', []);
+        \FlujosDimension\Core\Config::getInstance()->set('OPENAI_MODEL', 'model-x');
         $container->instance('database', new DummyDbForSystemInfo());
 
         $pdo = new \PDO('sqlite::memory:');
