@@ -27,3 +27,18 @@ cp .env.example .env
    tail -f storage/logs/error.log
    ```
    You can periodically clean old rotated logs using `Logger::cleanOldLogs()`.
+
+
+## Docker
+
+The repository provides a Dockerfile and `docker-compose.yml` for local development.
+Start the services with:
+```bash
+docker-compose up --build
+```
+This launches a PHP 8.2 FPM container and a MySQL service preloaded with `database/flujodimen_db.sql`.
+Install dependencies using:
+```bash
+docker-compose exec app composer install
+```
+The application listens on port 9000 via FPM and MySQL is exposed on port 3306.
