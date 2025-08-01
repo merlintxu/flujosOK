@@ -6,6 +6,7 @@ use FlujosDimension\Core\Response;
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Services\AnalyticsService;
 use FlujosDimension\Repositories\CallRepository;
+use FlujosDimension\Repositories\SyncHistoryRepository;
 
 /**
  * Synchronisation routines between Ringover and the local database.
@@ -18,7 +19,9 @@ class SyncController extends BaseController
     public function hourly(): Response
     {
         try {
-            if (!$this->container->bound(RingoverService::class) || !$this->container->bound('callRepository')) {
+            if (!$this->container->bound(RingoverService::class)
+                || !$this->container->bound('callRepository')
+                || !$this->container->bound('syncHistoryRepository')) {
                 return $this->successResponse(['inserted' => 0]);
             }
 
@@ -29,11 +32,23 @@ class SyncController extends BaseController
             /** @var AnalyticsService $analytics */
             $analytics = $this->container->bound('analyticsService') ? $this->service('analyticsService') : null;
 
-            $since = new \DateTimeImmutable('-1 hour');
+            /** @var SyncHistoryRepository $history */
+            $history = $this->service('syncHistoryRepository');
+
+            $since = $history->getLastSyncedAt() ?? new \DateTimeImmutable('-1 hour');
+            $last   = $since;
             $inserted = 0;
             foreach ($ringover->getCalls($since) as $call) {
                 $repo->insertOrIgnore($call);
                 $inserted++;
+                $callTime = isset($call['start_time']) ? new \DateTimeImmutable($call['start_time']) : $since;
+                if ($callTime > $last) {
+                    $last = $callTime;
+                }
+            }
+
+            if ($inserted > 0) {
+                $history->updateLastSyncedAt($last);
             }
 
             if ($analytics) {
@@ -53,22 +68,34 @@ class SyncController extends BaseController
     public function manual(): Response
     {
         try {
-            if (!$this->container->bound(RingoverService::class) || !$this->container->bound('callRepository')) {
+            if (!$this->container->bound(RingoverService::class)
+                || !$this->container->bound('callRepository')
+                || !$this->container->bound('syncHistoryRepository')) {
                 return $this->successResponse(['inserted' => 0]);
             }
 
-            $sinceParam = $this->request->get('since', '-1 day');
-            $since = new \DateTimeImmutable($sinceParam);
+            $history = $this->service('syncHistoryRepository');
+            $sinceParam = $this->request->get('since');
+            $since = $sinceParam ? new \DateTimeImmutable($sinceParam) : ($history->getLastSyncedAt() ?? new \DateTimeImmutable('-1 day'));
+            $last = $since;
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
             /** @var CallRepository $repo */
             $repo     = $this->service('callRepository');
-            
+
             $inserted = 0;
             foreach ($ringover->getCalls($since) as $call) {
                 $repo->insertOrIgnore($call);
                 $inserted++;
+                $callTime = isset($call['start_time']) ? new \DateTimeImmutable($call['start_time']) : $since;
+                if ($callTime > $last) {
+                    $last = $callTime;
+                }
+            }
+
+            if ($inserted > 0) {
+                $history->updateLastSyncedAt($last);
             }
 
             $this->logActivity('sync_manual', ['inserted' => $inserted]);
@@ -85,18 +112,15 @@ class SyncController extends BaseController
     public function status(): Response
     {
         try {
-            if (!$this->container->bound('callRepository')) {
+            if (!$this->container->bound('syncHistoryRepository')) {
                 return $this->successResponse(['last_sync' => null]);
             }
 
-            /** @var CallRepository $repo */
-            $repo = $this->service('callRepository');
-            $latest = $repo->callsNotInCrm();
-            $lastSync = null;
-            if (!empty($latest)) {
-                $last = end($latest);
-                $lastSync = $last['created_at'] ?? null;
-            }
+            /** @var SyncHistoryRepository $history */
+            $history = $this->service('syncHistoryRepository');
+            $ts = $history->getLastSyncedAt();
+            $lastSync = $ts ? $ts->format('Y-m-d H:i:s') : null;
+
             return $this->successResponse(['last_sync' => $lastSync]);
         } catch (\Exception $e) {
             return $this->handleError($e, 'Error getting sync status');

@@ -542,6 +542,19 @@ CREATE TABLE `sync_logs` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `sync_history`
+--
+
+CREATE TABLE `sync_history` (
+  `id` int(11) NOT NULL,
+  `last_synced_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sync_history` (`id`, `last_synced_at`) VALUES (1, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `system_alerts`
 --
 
@@ -940,6 +953,12 @@ ALTER TABLE `sync_logs`
   ADD KEY `idx_created_at` (`created_at`);
 
 --
+-- Indices de la tabla `sync_history`
+--
+ALTER TABLE `sync_history`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `system_alerts`
 --
 ALTER TABLE `system_alerts`
@@ -1113,6 +1132,12 @@ ALTER TABLE `rate_limit_config`
 -- AUTO_INCREMENT de la tabla `sync_logs`
 --
 ALTER TABLE `sync_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `sync_history`
+--
+ALTER TABLE `sync_history`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
