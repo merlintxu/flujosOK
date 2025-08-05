@@ -11,6 +11,18 @@ ini_set('log_errors', 1);
 require_once __DIR__ . '/auth.php';
 
 requireLogin();
+
+$action = $_GET['action'] ?? '';
+if ($action === 'env_editor') {
+    $config = \FlujosDimension\Core\Config::getInstance();
+    (new class($config) {
+        public $config;
+        public function __construct($config) { $this->config = $config; }
+        public function render() { include __DIR__ . '/views/env_editor.php'; }
+    })->render();
+    exit;
+}
+
 $csrf = csrfToken();
 /* ---------- Carga .env ---------- */
 $envFile = dirname(__DIR__) . '/.env';
@@ -445,6 +457,7 @@ $apisStatus  = apiHealth();
         <button class="tab-btn" data-tab="health">💚 Salud</button>
         <button class="tab-btn" data-tab="api">🔑 Gestión API</button>
         <button class="tab-btn" data-tab="tests">🧪 Tests</button>
+        <button class="tab-btn" onclick="window.location.href='?action=env_editor'">⚙️ Variables Entorno</button>
     </div>
 
     <!-- DASHBOARD -->
