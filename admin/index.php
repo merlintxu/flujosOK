@@ -91,6 +91,19 @@ function getHttpCode(string $url, array $headers=[]): int {
     curl_exec($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch); return $code;
 }
 
+$requestIsCheck = $_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['action'] ?? '') === 'check_api_status';
+if ($requestIsCheck) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Invalid CSRF token']);
+    } else {
+        $apisStatus = apiHealth();
+        echo json_encode(['apis' => $apisStatus]);
+    }
+    exit;
+}
+
 $stats       = statsToday();
 $calls       = recentCalls();
 $apisStatus  = apiHealth();
