@@ -30,6 +30,20 @@ if (!function_exists('writeLog')) {
     }
 }
 
+if (!function_exists('parseSince')) {
+    function parseSince(string $sinceStr): \DateTimeImmutable {
+        try {
+            return new \DateTimeImmutable($sinceStr);
+        } catch (\Exception $e) {
+            writeLog(LOG_LEVEL_ERROR, 'Invalid since parameter', [
+                'since' => $sinceStr,
+                'error' => $e->getMessage(),
+            ]);
+            respond_error('Invalid since parameter');
+        }
+    }
+}
+
 writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process');
 
 // Inicializa servicios y registra en el log
@@ -49,11 +63,7 @@ writeLog(LOG_LEVEL_DEBUG, 'Input parameters received', $params);
 
 $download = $params['download'] ?? false;
 $sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
-$since = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $sinceStr) ?: new \DateTimeImmutable($sinceStr);
-if (!$since) {
-    writeLog(LOG_LEVEL_ERROR, 'Invalid since parameter', ['since' => $sinceStr]);
-    respond_error('Invalid since parameter');
-}
+$since = parseSince($sinceStr);
 $inserted = 0;
 
 try {
