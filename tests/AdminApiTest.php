@@ -25,7 +25,7 @@ class AdminApiTest extends TestCase
         $this->container->instance('callRepository', new class {
             public function callsNotInCrm() { return [['id'=>1,'phone_number'=>'123']]; }
             public function markCrmSynced($id,$dealId) {}
-            public function insertOrIgnore($call) {}
+            public function insertOrIgnore($call): int { return 1; }
         });
 
         $this->container->instance(PipedriveService::class, new class {
@@ -142,7 +142,7 @@ class AdminApiTest extends TestCase
             public array $synced = [];
             public function callsNotInCrm() { return [['id'=>2,'phone_number'=>'555']]; }
             public function markCrmSynced($id,$dealId){ $this->synced[] = [$id,$dealId]; }
-            public function insertOrIgnore($call) {}
+            public function insertOrIgnore($call): int { return 1; }
         };
 
         $crm = new class {
