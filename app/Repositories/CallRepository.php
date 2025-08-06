@@ -59,8 +59,12 @@ final class CallRepository
         $this->db->commit();
     }
 
-    /** Insert a call if ringover_id not present */
-    public function insertOrIgnore(array $call): void
+    /**
+     * Insert a call if ringover_id not present
+     *
+     * @return int Number of rows inserted (0 if duplicate)
+     */
+    public function insertOrIgnore(array $call): int
     {
         $sql = 'INSERT IGNORE INTO calls (ringover_id, phone_number, direction, status, duration, recording_url, created_at) '
              . 'VALUES (:ringover_id, :phone_number, :direction, :status, :duration, :recording_url, :created_at)';
@@ -75,6 +79,8 @@ final class CallRepository
             ':recording_url'=> $call['recording_url']?? null,
             ':created_at'   => $call['start_time']   ?? date('Y-m-d H:i:s'),
         ]);
+
+        return $stmt->rowCount();
     }
 
     /** Return calls not yet synced with CRM */
