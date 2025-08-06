@@ -163,7 +163,14 @@ private function registerServices(): void
     // Ringover
     $this->container->singleton(
         \FlujosDimension\Services\RingoverService::class,
-        fn ($c) => new \FlujosDimension\Services\RingoverService($c)   // usa Container internamente
+        fn ($c) => new \FlujosDimension\Services\RingoverService(
+            $c->resolve('httpClient'),
+            $this->config
+        )
+    );
+    $this->container->alias(
+        \FlujosDimension\Services\RingoverService::class,
+        'ringoverService'
     );
 
     /* ---------- Servicios de dominio ---------- */
