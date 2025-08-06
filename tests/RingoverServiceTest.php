@@ -128,4 +128,27 @@ class RingoverServiceTest extends TestCase
         $result = $service->testConnection();
         $this->assertFalse($result['success']);
     }
+
+    public function testUsesConfiguredUrlAndToken()
+    {
+        $mock = new MockHandler([new Response(200)]);
+        $history = [];
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        $http = new HttpClient(['handler' => $stack]);
+
+        $config = $this->cfg([
+            'RINGOVER_API_TOKEN' => 'secret-token',
+            'RINGOVER_API_URL'   => 'https://api.config-test'
+        ]);
+
+        $service = new RingoverService($http, $config);
+        $service->testConnection();
+
+        $this->assertCount(1, $history);
+        $request = $history[0]['request'];
+        $this->assertSame('api.config-test', $request->getUri()->getHost());
+        $this->assertSame('/calls', $request->getUri()->getPath());
+        $this->assertSame('secret-token', $request->getHeaderLine('Authorization'));
+    }
 }
