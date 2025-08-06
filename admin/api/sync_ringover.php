@@ -13,7 +13,11 @@ define('LOG_LEVEL_INFO', 1);
 define('LOG_LEVEL_ERROR', 2);
 
 // Inicializa el log
-$GLOBALS['logFile'] = __DIR__ . '/sync_ringover.log';
+$logDir = dirname(__DIR__, 2) . '/storage/logs';
+if (!is_dir($logDir)) {
+    mkdir($logDir, 0755, true);
+}
+$GLOBALS['logFile'] = $logDir . '/sync_ringover.log';
 
 if (!function_exists('determine_log_level')) {
     function determine_log_level(Request $request): int {
