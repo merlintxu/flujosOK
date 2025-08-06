@@ -13,13 +13,14 @@ $repo     = $container->resolve('callRepository');
 
 $params   = validate_input($request, [
     'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
-    'since'    => ['filter' => FILTER_SANITIZE_STRING]
+    // FILTER_SANITIZE_STRING is deprecated; use a permitted filter and sanitize manually
+    'since'    => ['filter' => FILTER_UNSAFE_RAW]
 ]);
 
 $download = $params['download'] ?? false;
 
-$sinceStr = $params['since'] ?? '-1 hour';
-$since    = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string)$sinceStr) ?: new \DateTimeImmutable((string)$sinceStr);
+$sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
+$since    = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $sinceStr) ?: new \DateTimeImmutable($sinceStr);
 if (!$since) {
     respond_error('Invalid since parameter');
 }
