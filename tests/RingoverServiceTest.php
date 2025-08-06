@@ -41,6 +41,26 @@ class RingoverServiceTest extends TestCase
         $this->assertSame('GET', $first->getMethod());
         $this->assertStringContainsString('date_start', $first->getUri()->getQuery());
     }
+    public function testGetCallsConvertsSinceToUtc()
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['data' => []]))
+        ]);
+        $history = [];
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        $http = new HttpClient(['handler' => $stack]);
+        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $service = new RingoverService($http, $config);
+
+        $since = new DateTimeImmutable('2024-01-01 01:30:00', new \DateTimeZone('Europe/Madrid'));
+        iterator_to_array($service->getCalls($since));
+
+        $req = $history[0]['request'];
+        parse_str($req->getUri()->getQuery(), $params);
+        $this->assertSame('2024-01-01T00:30:00+00:00', $params['date_start']);
+    }
+
 
     public function testDownloadRecording()
     {

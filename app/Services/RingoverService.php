@@ -50,12 +50,16 @@ class RingoverService
     }
 
     /**
-     * Devuelve TODAS las llamadas creadas a partir de $since (UTC).  Generator → baja memoria.
+     * Devuelve TODAS las llamadas creadas a partir de $since.
+     * El parámetro se convierte automáticamente a UTC antes de la consulta.
+     * Generator → baja memoria.
      *
      * @return Generator<array<string,mixed>>
      */
     public function getCalls(\DateTimeInterface $since): Generator
     {
+        $since = $since->setTimezone(new \DateTimeZone('UTC'));
+
         $uri   = "{$this->baseUrl}/calls";
         $query = [
             'date_start' => $since->format('Y-m-d\TH:i:sP'),

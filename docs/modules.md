@@ -306,7 +306,7 @@ Client for the Ringover API.
 
 **Major methods**
 
-- `getCalls(since)` stream call data with pagination.
+- `getCalls(since)` stream call data with pagination; the date is converted to UTC before querying.
 - `downloadRecording(url)` stream a recording to disk. The
   download aborts if the file exceeds the configurable
   `RINGOVER_MAX_RECORDING_MB` limit.
