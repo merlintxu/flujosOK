@@ -87,11 +87,17 @@ $since = parseSince($sinceStr);
 $inserted = 0;
 
 try {
-    writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
     $calls = $ringoverService->getCalls($since);
-    writeLog(LOG_LEVEL_DEBUG, 'Ringover API response', $calls);
+    $retrieved = 0;
+    $loggedApiCall = false;
 
     foreach ($calls as $call) {
+        if (!$loggedApiCall) {
+            writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
+            $loggedApiCall = true;
+        }
+
+        $retrieved++;
         writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
         $repo->insertOrIgnore($call);
         if ($download && !empty($call['recording_url'])) {
@@ -100,6 +106,8 @@ try {
         }
         $inserted++;
     }
+
+    writeLog(LOG_LEVEL_DEBUG, 'Total calls retrieved from Ringover API', ['count' => $retrieved]);
     writeLog(LOG_LEVEL_INFO, 'Sync completed', ['inserted' => $inserted]);
     echo json_encode(['success'=>true,'inserted'=>$inserted]);
 } catch (Throwable $e) {
