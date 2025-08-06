@@ -31,6 +31,12 @@ function writeLog($level, $message, $data = null) {
 
 writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process');
 
+// Inicializa servicios y registra en el log
+$ringover = new RingoverService();
+$repo = new CallRepository();
+writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
+
+
 $params = validate_input($request, [
     'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
     'since'    => ['filter' => FILTER_UNSAFE_RAW]
