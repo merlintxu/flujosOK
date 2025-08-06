@@ -12,28 +12,31 @@ define('LOG_LEVEL_INFO', 1);
 define('LOG_LEVEL_ERROR', 2);
 
 // Cambia este valor para ajustar el nivel de detalle del log
-$CURRENT_LOG_LEVEL = LOG_LEVEL_DEBUG;
+$GLOBALS['CURRENT_LOG_LEVEL'] = LOG_LEVEL_DEBUG;
 
 // Inicializa el log
-$logFile = __DIR__ . '/sync_ringover.log';
-function writeLog($level, $message, $data = null) {
-    global $logFile, $CURRENT_LOG_LEVEL;
-    if ($level < $CURRENT_LOG_LEVEL) return;
-    $levels = ['DEBUG', 'INFO', 'ERROR'];
-    $timestamp = date('Y-m-d H:i:s');
-    $logMessage = "[{$timestamp}] [{$levels[$level]}] {$message}";
-    if ($data !== null) {
-        $logMessage .= "\nData: " . json_encode($data, JSON_PRETTY_PRINT);
+$GLOBALS['logFile'] = __DIR__ . '/sync_ringover.log';
+if (!function_exists('writeLog')) {
+    function writeLog($level, $message, $data = null) {
+        if ($level < $GLOBALS['CURRENT_LOG_LEVEL']) return;
+        $levels = ['DEBUG', 'INFO', 'ERROR'];
+        $timestamp = date('Y-m-d H:i:s');
+        $logMessage = "[{$timestamp}] [{$levels[$level]}] {$message}";
+        if ($data !== null) {
+            $logMessage .= "\nData: " . json_encode($data, JSON_PRETTY_PRINT);
+        }
+        $logMessage .= "\n" . str_repeat('-', 80) . "\n";
+        file_put_contents($GLOBALS['logFile'], $logMessage, FILE_APPEND);
     }
-    $logMessage .= "\n" . str_repeat('-', 80) . "\n";
-    file_put_contents($logFile, $logMessage, FILE_APPEND);
 }
 
 writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process');
 
 // Inicializa servicios y registra en el log
-$ringover = new RingoverService();
-$repo = new CallRepository();
+/** @var RingoverService $ringover */
+$ringover = $container->resolve(RingoverService::class);
+/** @var CallRepository $repo */
+$repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
 
 
