@@ -14,9 +14,10 @@ use RuntimeException;
 class RingoverService
 {
     private HttpClient $http;
+    private Config     $config;
     private string     $apiKey;
     private string     $baseUrl;
-    private int       $maxSize;
+    private int        $maxSize;
 
     /**
      * Prepare HTTP client and configuration values.
@@ -24,6 +25,7 @@ class RingoverService
     public function __construct(HttpClient $http, Config $config)
     {
         $this->http    = $http;
+        $this->config  = $config;
         $this->apiKey  = $config->get('RINGOVER_API_TOKEN', '');
         $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
         $limitMb       = (int)$config->get('RINGOVER_MAX_RECORDING_MB', 100);
