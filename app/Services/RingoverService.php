@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace FlujosDimension\Services;
 
-use FlujosDimension\Core\Container;
+use FlujosDimension\Core\Config;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use Generator;
 use RuntimeException;
@@ -21,13 +21,12 @@ class RingoverService
     /**
      * Prepare HTTP client and configuration values.
      */
-    public function __construct(Container $c)
+    public function __construct(HttpClient $http, Config $config)
     {
-        $this->http    = $c->resolve('httpClient');
-        $config        = $c->resolve('config');
-        $this->apiKey  = $config['RINGOVER_API_TOKEN'] ?? '';
-        $this->baseUrl = $config['RINGOVER_API_URL']  ?? 'https://public-api.ringover.com/v2';
-        $limitMb       = (int)($config['RINGOVER_MAX_RECORDING_MB'] ?? 100);
+        $this->http    = $http;
+        $this->apiKey  = $config->get('RINGOVER_API_TOKEN', '');
+        $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
+        $limitMb       = (int)$config->get('RINGOVER_MAX_RECORDING_MB', 100);
         $this->maxSize = $limitMb * 1024 * 1024;
     }
 
