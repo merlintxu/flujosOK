@@ -6,36 +6,65 @@ require __DIR__ . '/init.php';
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
 
-/** @var RingoverService $ringover */
-$ringover = $container->resolve(RingoverService::class);
-/** @var CallRepository $repo */
-$repo     = $container->resolve('callRepository');
+// Configuración de niveles de log
+define('LOG_LEVEL_DEBUG', 0);
+define('LOG_LEVEL_INFO', 1);
+define('LOG_LEVEL_ERROR', 2);
 
-$params   = validate_input($request, [
+// Cambia este valor para ajustar el nivel de detalle del log
+$CURRENT_LOG_LEVEL = LOG_LEVEL_DEBUG;
+
+// Inicializa el log
+$logFile = __DIR__ . '/sync_ringover.log';
+function writeLog($level, $message, $data = null) {
+    global $logFile, $CURRENT_LOG_LEVEL;
+    if ($level < $CURRENT_LOG_LEVEL) return;
+    $levels = ['DEBUG', 'INFO', 'ERROR'];
+    $timestamp = date('Y-m-d H:i:s');
+    $logMessage = "[{$timestamp}] [{$levels[$level]}] {$message}";
+    if ($data !== null) {
+        $logMessage .= "\nData: " . json_encode($data, JSON_PRETTY_PRINT);
+    }
+    $logMessage .= "\n" . str_repeat('-', 80) . "\n";
+    file_put_contents($logFile, $logMessage, FILE_APPEND);
+}
+
+writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process');
+
+$params = validate_input($request, [
     'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
-    // FILTER_SANITIZE_STRING is deprecated; use a permitted filter and sanitize manually
     'since'    => ['filter' => FILTER_UNSAFE_RAW]
 ]);
 
-$download = $params['download'] ?? false;
+writeLog(LOG_LEVEL_DEBUG, 'Input parameters received', $params);
 
+$download = $params['download'] ?? false;
 $sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
-$since    = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $sinceStr) ?: new \DateTimeImmutable($sinceStr);
+$since = @\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $sinceStr) ?: new \DateTimeImmutable($sinceStr);
 if (!$since) {
+    writeLog(LOG_LEVEL_ERROR, 'Invalid since parameter', ['since' => $sinceStr]);
     respond_error('Invalid since parameter');
 }
 $inserted = 0;
 
 try {
-    foreach ($ringover->getCalls($since) as $call) {
-        $repo->insertOrIgnore($call);          // implementa este método si aún no existe
+    writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
+    $calls = $ringover->getCalls($since);
+    writeLog(LOG_LEVEL_DEBUG, 'Ringover API response', $calls);
+
+    foreach ($calls as $call) {
+        writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
+        $repo->insertOrIgnore($call);
         if ($download && !empty($call['recording_url'])) {
+            writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $call['recording_url']]);
             $ringover->downloadRecording($call['recording_url']);
         }
         $inserted++;
     }
+    writeLog(LOG_LEVEL_INFO, 'Sync completed', ['inserted' => $inserted]);
     echo json_encode(['success'=>true,'inserted'=>$inserted]);
 } catch (Throwable $e) {
+    writeLog(LOG_LEVEL_ERROR, 'Exception occurred', ['error' => $e->getMessage()]);
     http_response_code(500);
     echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
 }
