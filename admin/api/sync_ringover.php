@@ -99,12 +99,14 @@ try {
 
         $retrieved++;
         writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
-        $repo->insertOrIgnore($call);
+        $result = $repo->insertOrIgnore($call);
         if ($download && !empty($call['recording_url'])) {
             writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $call['recording_url']]);
             $ringoverService->downloadRecording($call['recording_url']);
         }
-        $inserted++;
+        if ($result > 0) {
+            $inserted++;
+        }
     }
 
     writeLog(LOG_LEVEL_DEBUG, 'Total calls retrieved from Ringover API', ['count' => $retrieved]);
