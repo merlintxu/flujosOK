@@ -63,8 +63,8 @@ writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process', [
 ]);
 
 // Inicializa servicios y registra en el log
-/** @var RingoverService $ringover */
-$ringover = $container->resolve(RingoverService::class);
+/** @var RingoverService $ringoverService */
+$ringoverService = $container->resolve(RingoverService::class);
 /** @var CallRepository $repo */
 $repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
@@ -84,7 +84,7 @@ $inserted = 0;
 
 try {
     writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
-    $calls = $ringover->getCalls($since);
+    $calls = $ringoverService->getCalls($since);
     writeLog(LOG_LEVEL_DEBUG, 'Ringover API response', $calls);
 
     foreach ($calls as $call) {
@@ -92,7 +92,7 @@ try {
         $repo->insertOrIgnore($call);
         if ($download && !empty($call['recording_url'])) {
             writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $call['recording_url']]);
-            $ringover->downloadRecording($call['recording_url']);
+            $ringoverService->downloadRecording($call['recording_url']);
         }
         $inserted++;
     }
