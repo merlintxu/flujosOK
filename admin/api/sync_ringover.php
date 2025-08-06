@@ -5,17 +5,31 @@ require __DIR__ . '/init.php';
 
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
+use FlujosDimension\Core\Request;
 
 // Configuración de niveles de log
 define('LOG_LEVEL_DEBUG', 0);
 define('LOG_LEVEL_INFO', 1);
 define('LOG_LEVEL_ERROR', 2);
 
-// Cambia este valor para ajustar el nivel de detalle del log
-$GLOBALS['CURRENT_LOG_LEVEL'] = LOG_LEVEL_DEBUG;
-
 // Inicializa el log
 $GLOBALS['logFile'] = __DIR__ . '/sync_ringover.log';
+
+if (!function_exists('determine_log_level')) {
+    function determine_log_level(Request $request): int {
+        $value = $request->get('log_level') ?? $request->post('log_level') ?? getenv('RINGOVER_LOG_LEVEL');
+        $value = $value ? strtoupper((string) $value) : '';
+        $map = [
+            'DEBUG' => LOG_LEVEL_DEBUG,
+            'INFO'  => LOG_LEVEL_INFO,
+            'ERROR' => LOG_LEVEL_ERROR,
+        ];
+        return $map[$value] ?? LOG_LEVEL_DEBUG;
+    }
+}
+
+$GLOBALS['CURRENT_LOG_LEVEL'] = determine_log_level($request);
+
 if (!function_exists('writeLog')) {
     function writeLog($level, $message, $data = null) {
         if ($level < $GLOBALS['CURRENT_LOG_LEVEL']) return;
@@ -44,11 +58,13 @@ if (!function_exists('parseSince')) {
     }
 }
 
-writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process');
+writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process', [
+    'log_level' => ['DEBUG','INFO','ERROR'][$GLOBALS['CURRENT_LOG_LEVEL']],
+]);
 
 // Inicializa servicios y registra en el log
-/** @var RingoverService $ringover */
-$ringover = $container->resolve(RingoverService::class);
+/** @var RingoverService $ringoverService */
+$ringoverService = $container->resolve(RingoverService::class);
 /** @var CallRepository $repo */
 $repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
@@ -68,7 +84,7 @@ $inserted = 0;
 
 try {
     writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
-    $calls = $ringover->getCalls($since);
+    $calls = $ringoverService->getCalls($since);
     writeLog(LOG_LEVEL_DEBUG, 'Ringover API response', $calls);
 
     foreach ($calls as $call) {
@@ -76,7 +92,7 @@ try {
         $repo->insertOrIgnore($call);
         if ($download && !empty($call['recording_url'])) {
             writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $call['recording_url']]);
-            $ringover->downloadRecording($call['recording_url']);
+            $ringoverService->downloadRecording($call['recording_url']);
         }
         $inserted++;
     }
