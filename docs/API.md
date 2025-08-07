@@ -35,6 +35,7 @@ Create a new call record. Fields: `phone_number`, `direction`, `status`, `durati
 
 ### `POST /api/sync/hourly`
 Trigger hourly synchronization from Ringover.
+Parameters can also be supplied via a `GET` request using the query string.
 
 ### `GET /api/sync/status`
 Get information about the last synchronization.

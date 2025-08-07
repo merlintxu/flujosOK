@@ -74,6 +74,7 @@ $repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
 
 
+// Parameters may be provided via POST body or GET query string
 $params = validate_input($request, [
     'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
     'since'    => ['filter' => FILTER_UNSAFE_RAW]
