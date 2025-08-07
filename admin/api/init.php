@@ -55,7 +55,10 @@ if (!function_exists('validate_fields')) {
 
 if (!function_exists('validate_input')) {
     /**
-     * Validate POST parameters using filter_var rules.
+     * Validate input parameters using filter_var rules.
+     *
+     * Parameters are first looked up in POST and, if not found, in GET. This
+     * allows callers to pass values either in the request body or query string.
      *
      * @param array<string, array{filter:int, required?:bool}> $rules
      * @return array<string, mixed>
@@ -66,6 +69,10 @@ if (!function_exists('validate_input')) {
             $required = $opts['required'] ?? false;
             $filter   = $opts['filter']   ?? FILTER_DEFAULT;
             $value    = $request->post($name);
+
+            if ($value === null) {
+                $value = $request->get($name);
+            }
 
             if ($value === null) {
                 if ($required) {

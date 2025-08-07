@@ -51,11 +51,11 @@ class AdminApiTest extends TestCase
         $this->container->alias(\PDO::class, 'database');
     }
 
-    private function runScript(string $name, array $post = [], bool $goodCsrf = true): array
+    private function runScript(string $name, array $params = [], bool $goodCsrf = true, string $method = 'POST'): array
     {
         $_GET = [];
-        $_POST = $post;
-        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = [];
+        $_SERVER['REQUEST_METHOD'] = $method;
         $_SERVER['REQUEST_URI'] = '/admin/api/'.$name;
         if (!defined('FD_TESTING')) {
             define('FD_TESTING', true);
@@ -64,10 +64,15 @@ class AdminApiTest extends TestCase
             session_start();
         }
         $_SESSION = ['authenticated' => true, 'csrf_token' => 'tok'];
-        if ($goodCsrf) {
-            $_POST['csrf_token'] = 'tok';
+        if ($method === 'POST') {
+            $_POST = $params;
+            if ($goodCsrf) {
+                $_POST['csrf_token'] = 'tok';
+            } else {
+                $_POST['csrf_token'] = 'bad';
+            }
         } else {
-            $_POST['csrf_token'] = 'bad';
+            $_GET = $params;
         }
         $container = $this->container;
         ob_start();
@@ -103,6 +108,13 @@ class AdminApiTest extends TestCase
     public function testSyncRingoverSuccess()
     {
         $r = $this->runScript('sync_ringover.php', ['download' => '1']);
+        $this->assertSame(200, $r['code']);
+        $this->assertTrue($r['data']['success']);
+    }
+
+    public function testSyncRingoverAcceptsGetParameters()
+    {
+        $r = $this->runScript('sync_ringover.php', ['download' => '1'], true, 'GET');
         $this->assertSame(200, $r['code']);
         $this->assertTrue($r['data']['success']);
     }
