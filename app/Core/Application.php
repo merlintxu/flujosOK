@@ -278,6 +278,9 @@ private function registerServices(): void
                 // Ringover specific webhooks
                 $router->post('/webhooks/ringover/record-available', 'RingoverWebhookController@recordAvailable');
                 $router->post('/webhooks/ringover/voicemail-available', 'RingoverWebhookController@voicemailAvailable');
+                $router->get('/webhooks/ringover/health', function() {
+                    return new Response('ok', 200);
+                });
 
                 // Allow preflight CORS requests and bypass CSRF
                 $router->options('/webhooks/ringover/record-available', function() {
