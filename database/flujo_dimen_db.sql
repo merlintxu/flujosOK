@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 22-07-2025 a las 15:46:21
+-- Tiempo de generación: 08-08-2025 a las 14:24:33
 -- Versión del servidor: 10.11.13-MariaDB-deb11-log
--- Versión de PHP: 8.2.28
+-- Versión de PHP: 8.2.29
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -119,6 +119,24 @@ CREATE TABLE `api_tokens` (
   `is_active` tinyint(1) DEFAULT 1,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `api_tokens`
+--
+
+INSERT INTO `api_tokens` (`id`, `token_hash`, `name`, `expires_at`, `last_used_at`, `is_active`, `created_at`) VALUES
+(1, 'cde35cd548bd8816e0a0f3e37f43c1267ee3bf44fce3de569efa023a87a1009d', 'Token API', '2025-08-02 10:47:09', NULL, 1, '2025-08-01 10:47:09'),
+(2, 'f9be415259351b857c5eaf0a91d7264fe25ca1f5a9c6a0e09148a97d0f2a386c', 'ase', '2025-08-02 10:47:21', NULL, 1, '2025-08-01 10:47:21'),
+(3, '8846284ffd390c883cd49a159038967653abbf4ed6a7d799d8cee64d35066362', 'Token API', '2025-08-02 10:47:58', NULL, 1, '2025-08-01 10:47:58'),
+(4, '43da2c45a77bc6bb51347ed14072a78190a5f0bd3f62c6c607564b07b68964c0', 'Token API', '2025-08-02 10:56:43', NULL, 1, '2025-08-01 10:56:43'),
+(5, 'cb68a5353a9dda779786f8dcedad2de6f0714c18447ea77258e9616779f17418', 'Token API', '2025-08-07 11:45:03', NULL, 1, '2025-08-06 11:45:03'),
+(6, 'f1ebf3963d527195cb2bd61c9ef2d37334c27fb83b949787c2195e6a973144bd', 'Token API', '2025-08-07 11:48:55', NULL, 1, '2025-08-06 11:48:55'),
+(7, '8c6ffdc2b9f94628b0763e1258ae6c9c48e0af9b1cb6c4742d5355a9c579b794', 'Token API', '2025-08-07 12:16:20', NULL, 1, '2025-08-06 12:16:20'),
+(8, 'e58926a52173429b444cf820d2fc0a000b16ac9f57f664933e61c3ac9c1b39dd', 'Token API', '2025-08-07 13:19:30', NULL, 1, '2025-08-06 13:19:30'),
+(9, 'ca56b085524096cf535c76234a98451d44da0320243c34cba942f91f606c9511', 'Token API', '2025-08-07 14:02:14', NULL, 1, '2025-08-06 14:02:14'),
+(10, '8fb680bd835c1bf00313368cb73780550ff0b6fd13733b17d354b625b712b15a', 'Token API', '2025-08-07 17:06:01', NULL, 1, '2025-08-06 17:06:01'),
+(11, '6567ca0425eba23fec7faec649307c9ab67b3fe3fe1afe9312e04a96b59dcbed', 'Token API', '2025-08-07 18:17:29', NULL, 1, '2025-08-06 18:17:29'),
+(12, '98bcc5b67a39bea8391a2a24eef756fd58381f77c9f4a9b71ffb9ef35705da49', 'Token API', '2025-08-09 07:09:34', NULL, 1, '2025-08-08 07:09:34');
 
 -- --------------------------------------------------------
 
@@ -250,16 +268,6 @@ CREATE TABLE `calls` (
   `recording_path` varchar(500) DEFAULT NULL,
   `sentiment_numeric` tinyint(4) GENERATED ALWAYS AS (case `ai_sentiment` when 'positive' then 1 when 'neutral' then 0 when 'negative' then -1 end) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Volcado de datos para la tabla `calls`
---
-
-INSERT INTO `calls` (`id`, `call_id`, `ringover_id`, `phone_number`, `caller_name`, `contact_name`, `direction`, `duration`, `recording_url`, `ai_transcription`, `recording_file`, `transcription`, `transcription_confidence`, `analysis`, `sentiment`, `sentiment_confidence`, `crm_synced`, `urgency_level`, `keywords`, `summary`, `pipedrive_person_id`, `pipedrive_deal_id`, `status`, `created_at`, `updated_at`, `pending_recordings`, `pending_transcriptions`, `pending_analysis`, `pending_crm_sync`, `agent_id`, `agent_name`, `transcription_text`, `sentiment_label`, `sentiment_score`, `ai_summary`, `ai_keywords`, `ai_sentiment`, `pipedrive_contact_id`, `action_items`, `call_quality_score`, `customer_satisfaction_score`, `business_value_score`, `opportunity_type`, `ai_processed_at`, `batch_id`, `has_recording`, `start_time`, `is_answered`, `last_state`, `total_duration`, `incall_duration`, `contact_number`, `recording_path`) VALUES
-(1, 'call_687a168a8004a', NULL, NULL, NULL, NULL, '', 0, NULL, NULL, NULL, NULL, 0.0000, NULL, NULL, 0.9000, 0, 0, '[\"servicios\",\"consultor\\u00eda\",\"precios\",\"disponibilidad\"]', NULL, NULL, NULL, 'pending', '2025-07-18 09:40:26', '2025-07-18 09:40:38', 0, 0, 0, 0, NULL, 'Juan Pérez', 'Hola, buenos días. Estoy interesado en sus servicios de consultoría. Me gustaría saber más sobre los precios y disponibilidad.', 'positivo', 0.850, 'El cliente mostró interés en los servicios de consultoría y solicitó información sobre precios y disponibilidad.', NULL, 'neutral', NULL, '[\"Proporcionar informaci\\u00f3n sobre precios\",\"Confirmar disponibilidad de servicios\"]', 0.950, 0.900, 0.800, 'consulta', '2025-07-18 09:40:38', NULL, 1, '2025-07-18 07:40:26', 1, 'ANSWERED', 180, 175, '34699450182', NULL),
-(2, 'call_687a168a80081', NULL, NULL, NULL, NULL, '', 0, NULL, NULL, NULL, NULL, 0.0000, NULL, NULL, 0.9000, 0, 0, '[\"propuesta\",\"personalizada\",\"reuni\\u00f3n\",\"contactar\"]', NULL, NULL, NULL, 'pending', '2025-07-18 09:40:26', '2025-07-18 09:40:42', 0, 0, 0, 0, NULL, 'María García', 'Gracias por contactarnos. Hemos revisado su solicitud y podemos ofrecerle una propuesta personalizada. ¿Cuándo sería un buen momento para una reunión?', 'positivo', 0.850, 'El agente ofreció una propuesta personalizada y solicitó un momento para programar una reunión.', NULL, 'neutral', NULL, '[\"Programar reuni\\u00f3n\",\"Enviar propuesta personalizada\"]', 0.950, 0.900, 0.800, 'venta', '2025-07-18 09:40:42', NULL, 1, '2025-07-18 08:40:26', 1, 'ANSWERED', 240, 235, '34612345678', NULL),
-(3, 'call_687a168a80092', NULL, NULL, NULL, NULL, '', 0, NULL, NULL, NULL, NULL, 0.0000, NULL, NULL, 0.0000, 0, 0, NULL, NULL, NULL, NULL, 'pending', '2025-07-18 09:40:26', '2025-07-18 09:40:26', 0, 0, 0, 0, NULL, '', '', NULL, NULL, NULL, NULL, 'neutral', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '2025-07-18 09:10:26', 0, 'NO_ANSWER', 0, 0, '34687654321', NULL),
-(4, '', NULL, '+34600123456', NULL, 'Cliente de Prueba', 'inbound', 180, NULL, NULL, NULL, NULL, 0.0000, NULL, NULL, 0.0000, 0, 0, '[\"factura\",\" cargo no reconocido\",\" consulta\"]', NULL, NULL, NULL, 'completed', '2025-07-18 10:30:11', '2025-07-18 10:30:14', 0, 0, 0, 0, 1, 'Agente de Prueba', 'Hola, buenos días. Llamo para consultar sobre mi factura del mes pasado. Parece que hay un cargo que no reconozco.', 'neutral', NULL, NULL, NULL, 'neutral', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, 0, NULL, 0, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -521,6 +529,24 @@ CREATE TABLE `recent_calls_view` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `sync_history`
+--
+
+CREATE TABLE `sync_history` (
+  `id` int(11) NOT NULL,
+  `last_synced_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `sync_history`
+--
+
+INSERT INTO `sync_history` (`id`, `last_synced_at`) VALUES
+(1, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `sync_logs`
 --
 
@@ -538,19 +564,6 @@ CREATE TABLE `sync_logs` (
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `sync_history`
---
-
-CREATE TABLE `sync_history` (
-  `id` int(11) NOT NULL,
-  `last_synced_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-INSERT INTO `sync_history` (`id`, `last_synced_at`) VALUES (1, NULL);
 
 -- --------------------------------------------------------
 
@@ -752,6 +765,19 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `first_name`, `last_name`, `role`, `active`, `last_login`, `two_factor_enabled`, `two_factor_secret`, `remember_token`, `created_at`, `updated_at`, `deleted_at`, `full_name`, `is_active`) VALUES
 (1, 'admin', 'admin@flujos-dimension.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'admin', 1, NULL, 0, NULL, NULL, '2025-07-17 21:27:44', NULL, NULL, NULL, 1);
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `webhooks`
+--
+
+CREATE TABLE `webhooks` (
+  `id` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `event` varchar(100) NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 --
 -- Índices para tablas volcadas
 --
@@ -943,6 +969,12 @@ ALTER TABLE `rate_limit_config`
   ADD UNIQUE KEY `service_name` (`service_name`);
 
 --
+-- Indices de la tabla `sync_history`
+--
+ALTER TABLE `sync_history`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `sync_logs`
 --
 ALTER TABLE `sync_logs`
@@ -951,12 +983,6 @@ ALTER TABLE `sync_logs`
   ADD KEY `idx_service_operation` (`service_name`,`operation`),
   ADD KEY `idx_status` (`status`),
   ADD KEY `idx_created_at` (`created_at`);
-
---
--- Indices de la tabla `sync_history`
---
-ALTER TABLE `sync_history`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `system_alerts`
@@ -1017,6 +1043,12 @@ ALTER TABLE `users`
   ADD KEY `idx_is_active` (`is_active`);
 
 --
+-- Indices de la tabla `webhooks`
+--
+ALTER TABLE `webhooks`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -1048,7 +1080,7 @@ ALTER TABLE `api_monitoring`
 -- AUTO_INCREMENT de la tabla `api_tokens`
 --
 ALTER TABLE `api_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT de la tabla `async_tasks`
@@ -1129,15 +1161,15 @@ ALTER TABLE `rate_limit_config`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT de la tabla `sync_logs`
---
-ALTER TABLE `sync_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT de la tabla `sync_history`
 --
 ALTER TABLE `sync_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `sync_logs`
+--
+ALTER TABLE `sync_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -1175,6 +1207,12 @@ ALTER TABLE `transcriptions`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `webhooks`
+--
+ALTER TABLE `webhooks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 -- --------------------------------------------------------
 
