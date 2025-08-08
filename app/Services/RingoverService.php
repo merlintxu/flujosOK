@@ -6,6 +6,7 @@ namespace FlujosDimension\Services;
 use FlujosDimension\Core\Config;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use Generator;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -18,6 +19,7 @@ class RingoverService
     private string     $apiKey;
     private string     $baseUrl;
     private int        $maxSize;
+    private float      $lastRequestAt = 0.0;
 
     /**
      * Prepare HTTP client and configuration values.
@@ -50,6 +52,55 @@ class RingoverService
     }
 
     /**
+     * @param array<string,mixed> $query
+     * @return array<string,mixed>
+     */
+    private function makeRequest(string $method, string $uri, array $query = []): array
+    {
+        $now     = microtime(true);
+        $elapsed = $now - $this->lastRequestAt;
+        if ($elapsed < 0.5) {
+            usleep((int)((0.5 - $elapsed) * 1_000_000));
+        }
+        $this->lastRequestAt = microtime(true);
+
+        $attempt = 0;
+        $delay   = 0.5;
+
+        do {
+            $resp   = $this->http->request($method, $uri, [
+                'headers'         => ['Authorization' => $this->apiKey],
+                'query'           => $query,
+                'timeout'         => 10,
+                'connect_timeout' => 5,
+            ]);
+            $status = $resp->getStatusCode();
+
+            if ($status >= 200 && $status < 300) {
+                try {
+                    $data = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $e) {
+                    throw new RuntimeException('Invalid JSON from Ringover', 0, $e);
+                }
+                if (!is_array($data)) {
+                    throw new RuntimeException('Invalid JSON from Ringover');
+                }
+                return $data;
+            }
+
+            if (!in_array($status, [429, 500, 502, 503, 504], true) || $attempt >= 5) {
+                throw new RuntimeException("Ringover error: {$status}");
+            }
+
+            $retryAfter = (int)$resp->getHeaderLine('Retry-After');
+            $sleep      = max($retryAfter, $delay);
+            usleep((int)($sleep * 1_000_000));
+            $delay *= 2;
+            $attempt++;
+        } while (true);
+    }
+
+    /**
      * Devuelve TODAS las llamadas creadas a partir de $since.
      * El parámetro se convierte automáticamente a UTC antes de la consulta.
      * Generator → baja memoria.
@@ -60,36 +111,26 @@ class RingoverService
     {
         $since = $since->setTimezone(new \DateTimeZone('UTC'));
 
-        $uri   = "{$this->baseUrl}/calls";
-        $query = [
-            'date_start' => $since->format('Y-m-d\TH:i:sP'),
-            'limit'      => 1000,
-        ];
+        $page  = 1;
+        $limit = 100;
 
         do {
-            $resp = $this->http->request('GET', $uri, [
-                'headers' => ['Authorization' => $this->apiKey],
-                'query'   => $query,
+            $body = $this->makeRequest('GET', "{$this->baseUrl}/calls", [
+                'start_date' => $since->format(DATE_ATOM),
+                'page'       => $page,
+                'limit'      => $limit,
             ]);
-
-            if ($resp->getStatusCode() !== 200) {
-                throw new RuntimeException("Ringover error: {$resp->getStatusCode()}");
-            }
-
-            $body = json_decode((string)$resp->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             foreach ($body['data'] ?? [] as $call) {
                 yield $call;
             }
 
-            $link = $resp->getHeaderLine('Link');
-            if (preg_match('#<([^>]+)>;\s*rel="next"#', $link, $m)) {
-                $uri   = $m[1];   // siguiente página ya con querystring
-                $query = [];
-            } else {
-                $uri = null;
+            if (empty($body['data']) || count($body['data']) < $limit) {
+                break;
             }
-        } while ($uri);
+
+            $page++;
+        } while (true);
     }
 
     /**
