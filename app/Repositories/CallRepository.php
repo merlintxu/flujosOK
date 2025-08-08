@@ -64,21 +64,81 @@ final class CallRepository
      */
     public function insertOrIgnore(array $call): int
     {
-        $sql = 'INSERT IGNORE INTO calls (ringover_id, phone_number, direction, status, duration, recording_url, created_at) '
-             . 'VALUES (:ringover_id, :phone_number, :direction, :status, :duration, :recording_url, :created_at)';
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $prefix = $driver === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+
+        $sql = "$prefix INTO calls (
+                    ringover_id, call_id, phone_number, contact_number,
+                    caller_name, contact_name, direction, status, duration,
+                    recording_url, voicemail_url, start_time, total_duration,
+                    incall_duration, last_state, is_answered, created_at
+                ) VALUES (
+                    :ringover_id, :call_id, :phone_number, :contact_number,
+                    :caller_name, :contact_name, :direction, :status, :duration,
+                    :recording_url, :voicemail_url, :start_time, :total_duration,
+                    :incall_duration, :last_state, :is_answered, :created_at
+                )";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':ringover_id'  => $call['ringover_id']  ?? null,
-            ':phone_number' => $call['phone_number'] ?? null,
-            ':direction'    => $call['direction']    ?? 'inbound',
-            ':status'       => $call['status']       ?? 'pending',
-            ':duration'     => $call['duration']     ?? 0,
-            ':recording_url'=> $call['recording_url']?? null,
-            ':created_at'   => $call['start_time']   ?? date('Y-m-d H:i:s'),
+            ':ringover_id'   => $call['ringover_id']    ?? null,
+            ':call_id'       => $call['call_id']        ?? null,
+            ':phone_number'  => $call['phone_number']   ?? null,
+            ':contact_number'=> $call['contact_number'] ?? null,
+            ':caller_name'   => $call['caller_name']    ?? null,
+            ':contact_name'  => $call['contact_name']   ?? null,
+            ':direction'     => $call['direction']      ?? 'inbound',
+            ':status'        => $call['status']         ?? 'pending',
+            ':duration'      => $call['duration']       ?? 0,
+            ':recording_url' => $call['recording_url']  ?? null,
+            ':voicemail_url' => $call['voicemail_url']  ?? null,
+            ':start_time'    => $call['start_time']     ?? null,
+            ':total_duration'=> $call['total_duration'] ?? null,
+            ':incall_duration'=> $call['incall_duration'] ?? null,
+            ':last_state'    => $call['last_state']     ?? null,
+            ':is_answered'   => isset($call['is_answered']) ? (int)$call['is_answered'] : null,
+            ':created_at'    => $call['start_time']     ?? date('Y-m-d H:i:s'),
         ]);
 
         return (int)$stmt->rowCount();
+    }
+
+    /**
+     * Persist recording metadata for a call and mark it as having a recording.
+     *
+     * @param array{url?:string,path?:string,file_path?:string,size?:int,file_size?:int,duration?:int,format?:string} $recordInfo
+     */
+    public function addRecording(int $callId, array $recordInfo): void
+    {
+        $path = $recordInfo['path'] ?? $recordInfo['file_path'] ?? '';
+        $size = $recordInfo['size'] ?? $recordInfo['file_size'] ?? 0;
+        $duration = $recordInfo['duration'] ?? 0;
+        $format = $recordInfo['format'] ?? 'mp3';
+        $url = $recordInfo['url'] ?? ($recordInfo['recording_url'] ?? null);
+
+        $this->db->beginTransaction();
+
+        $insert = $this->db->prepare(
+            'INSERT INTO call_recordings (call_id, file_path, file_size, duration, format) VALUES (:call_id, :file_path, :file_size, :duration, :format)'
+        );
+        $insert->execute([
+            ':call_id' => $callId,
+            ':file_path' => $path,
+            ':file_size' => $size,
+            ':duration' => $duration,
+            ':format' => $format,
+        ]);
+
+        $update = $this->db->prepare(
+            'UPDATE calls SET recording_url = :url, recording_path = :path, has_recording = 1 WHERE id = :id'
+        );
+        $update->execute([
+            ':url' => $url,
+            ':path' => $path,
+            ':id' => $callId,
+        ]);
+
+        $this->db->commit();
     }
 
     /** Return calls not yet synced with CRM */
