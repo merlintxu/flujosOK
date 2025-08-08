@@ -59,7 +59,7 @@ final class CallRepository
         $this->db->commit();
     }
 
-    /** Insert a call if ringover_id not present
+    /** Insert a call using mapped keys. Ignores duplicates by ringover_id.
      *  @return int Number of rows inserted (0 if ignored)
      */
     public function insertOrIgnore(array $call): int
@@ -69,7 +69,7 @@ final class CallRepository
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':ringover_id'  => $call['id']          ?? null,
+            ':ringover_id'  => $call['ringover_id']  ?? null,
             ':phone_number' => $call['phone_number'] ?? null,
             ':direction'    => $call['direction']    ?? 'inbound',
             ':status'       => $call['status']       ?? 'pending',
