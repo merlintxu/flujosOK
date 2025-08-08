@@ -39,9 +39,10 @@ class SyncController extends BaseController
             $last   = $since;
             $inserted = 0;
             foreach ($ringover->getCalls($since) as $call) {
-                $repo->insertOrIgnore($call);
+                $mapped = $ringover->mapCallFields($call);
+                $repo->insertOrIgnore($mapped);
                 $inserted++;
-                $callTime = isset($call['start_time']) ? new \DateTimeImmutable($call['start_time']) : $since;
+                $callTime = isset($mapped['start_time']) ? new \DateTimeImmutable($mapped['start_time']) : $since;
                 if ($callTime > $last) {
                     $last = $callTime;
                 }
@@ -86,9 +87,10 @@ class SyncController extends BaseController
 
             $inserted = 0;
             foreach ($ringover->getCalls($since) as $call) {
-                $repo->insertOrIgnore($call);
+                $mapped = $ringover->mapCallFields($call);
+                $repo->insertOrIgnore($mapped);
                 $inserted++;
-                $callTime = isset($call['start_time']) ? new \DateTimeImmutable($call['start_time']) : $since;
+                $callTime = isset($mapped['start_time']) ? new \DateTimeImmutable($mapped['start_time']) : $since;
                 if ($callTime > $last) {
                     $last = $callTime;
                 }

@@ -77,18 +77,27 @@ writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
 // Parameters may be provided via POST body or GET query string
 $params = validate_input($request, [
     'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
+    'full'     => ['filter' => FILTER_VALIDATE_BOOLEAN],
+    'fields'   => ['filter' => FILTER_UNSAFE_RAW],
     'since'    => ['filter' => FILTER_UNSAFE_RAW]
 ]);
 
 writeLog(LOG_LEVEL_DEBUG, 'Input parameters received', $params);
 
 $download = $params['download'] ?? false;
+$full     = $params['full'] ?? $download;
+$fields   = isset($params['fields']) ? sanitize_string((string)$params['fields']) : null;
 $sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
 $since = parseSince($sinceStr);
 $inserted = 0;
+$downloads = 0;
 
 try {
-    $calls = $ringoverService->getCalls($since);
+    if ($full || $fields !== null) {
+        $calls = $ringoverService->getCalls($since, $full, $fields);
+    } else {
+        $calls = $ringoverService->getCalls($since);
+    }
     $retrieved = 0;
     $loggedApiCall = false;
 
@@ -102,18 +111,55 @@ try {
         writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
         $mapped = $ringoverService->mapCallFields($call);
         $result = $repo->insertOrIgnore($mapped);
-        if ($download && !empty($mapped['recording_url'])) {
-            writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $mapped['recording_url']]);
-            $ringoverService->downloadRecording($mapped['recording_url'], 'recordings');
+
+        $ringId = (string)($mapped['ringover_id'] ?? '');
+        $callId = null;
+        if (method_exists($repo, 'findIdByRingoverId') && $ringId !== '') {
+            $callId = $repo->findIdByRingoverId($ringId);
         }
+
+        $hasMedia = !empty($mapped['recording_url']) || !empty($mapped['voicemail_url']);
+
+        if ($full && $hasMedia && $callId !== null) {
+            try {
+                if (!empty($mapped['recording_url']) && method_exists($ringoverService, 'downloadRecording')) {
+                    writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $mapped['recording_url']]);
+                    $info = $ringoverService->downloadRecording($mapped['recording_url'], 'recordings');
+                } elseif (!empty($mapped['voicemail_url']) && method_exists($ringoverService, 'downloadVoicemail')) {
+                    writeLog(LOG_LEVEL_INFO, 'Downloading voicemail', ['url' => $mapped['voicemail_url']]);
+                    $info = $ringoverService->downloadVoicemail($mapped['voicemail_url']);
+                } else {
+                    $info = null;
+                }
+
+                if ($info !== null && method_exists($repo, 'addRecording')) {
+                    $info['url'] = $info['url'] ?? ($mapped['recording_url'] ?? $mapped['voicemail_url']);
+                    $repo->addRecording($callId, $info);
+                }
+
+                if ($callId !== null && method_exists($repo, 'setPendingRecordings')) {
+                    $repo->setPendingRecordings($callId, false);
+                }
+                $downloads++;
+            } catch (\Throwable $e) {
+                writeLog(LOG_LEVEL_ERROR, 'Recording download failed', ['error' => $e->getMessage()]);
+                if ($callId !== null && method_exists($repo, 'setPendingRecordings')) {
+                    $repo->setPendingRecordings($callId, true);
+                }
+            }
+        } elseif ($hasMedia && $callId !== null && method_exists($repo, 'setPendingRecordings')) {
+            // Media exists but not downloaded
+            $repo->setPendingRecordings($callId, true);
+        }
+
         if ($result > 0) {
             $inserted++;
         }
     }
 
     writeLog(LOG_LEVEL_DEBUG, 'Total calls retrieved from Ringover API', ['count' => $retrieved]);
-    writeLog(LOG_LEVEL_INFO, 'Sync completed', ['inserted' => $inserted]);
-    echo json_encode(['success'=>true,'inserted'=>$inserted]);
+    writeLog(LOG_LEVEL_INFO, 'Sync completed', ['retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads]);
+    echo json_encode(['success'=>true,'retrieved'=>$retrieved,'inserted'=>$inserted,'downloads'=>$downloads]);
 } catch (Throwable $e) {
     writeLog(LOG_LEVEL_ERROR, 'Exception occurred', ['error' => $e->getMessage()]);
     http_response_code(500);

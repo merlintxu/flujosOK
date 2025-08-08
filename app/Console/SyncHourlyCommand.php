@@ -48,7 +48,8 @@ class SyncHourlyCommand extends Command
             $since = new \DateTimeImmutable('-1 hour');
             $inserted = 0;
             foreach ($ringover->getCalls($since) as $call) {
-                $repo->insertOrIgnore($call);
+                $mapped = $ringover->mapCallFields($call);
+                $repo->insertOrIgnore($mapped);
                 $inserted++;
             }
 

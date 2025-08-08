@@ -105,9 +105,12 @@ class RingoverService
      * El parámetro se convierte automáticamente a UTC antes de la consulta.
      * Generator → baja memoria.
      *
+     * @param bool   $full   Include extra fields from Ringover (full=1)
+     * @param ?string $fields Optional fields parameter, e.g. 'all'
+     *
      * @return Generator<array<string,mixed>>
      */
-    public function getCalls(\DateTimeInterface $since): Generator
+    public function getCalls(\DateTimeInterface $since, bool $full = false, ?string $fields = null): Generator
     {
         $since = $since->setTimezone(new \DateTimeZone('UTC'));
 
@@ -119,6 +122,12 @@ class RingoverService
 
         while (true) {
             $query = ['start_date' => $since->format(DATE_ATOM)];
+            if ($full) {
+                $query['full'] = 1;
+            }
+            if ($fields !== null) {
+                $query['fields'] = $fields;
+            }
             if ($useOffset) {
                 $query['limit_offset'] = $offset;
                 $query['limit_count']  = $limit;
