@@ -37,7 +37,7 @@ class AdminApiTest extends TestCase
 
         $this->container->instance(RingoverService::class, new class {
             public function getCalls($since){ return [['ringover_id' => 'r1', 'recording_url'=>null]]; }
-            public function downloadRecording($url){}
+            public function downloadRecording($url, $subdir = 'recordings'){ return ['path'=>'', 'size'=>0, 'duration'=>0, 'format'=>'mp3']; }
             public function mapCallFields($call){ return $call; }
         });
         $this->container->alias(RingoverService::class, 'ringoverService');

@@ -111,26 +111,60 @@ class RingoverService
     {
         $since = $since->setTimezone(new \DateTimeZone('UTC'));
 
-        $page  = 1;
-        $limit = 100;
+        $limit     = 100;
+        $offset    = 0;
+        $page      = 1;
+        $useOffset = true;
+        $prevFirst = null;
 
-        do {
-            $body = $this->makeRequest('GET', "{$this->baseUrl}/calls", [
-                'start_date' => $since->format(DATE_ATOM),
-                'page'       => $page,
-                'limit'      => $limit,
-            ]);
-
-            foreach ($body['data'] ?? [] as $call) {
-                yield $call;
+        while (true) {
+            $query = ['start_date' => $since->format(DATE_ATOM)];
+            if ($useOffset) {
+                $query['limit_offset'] = $offset;
+                $query['limit_count']  = $limit;
+            } else {
+                $query['page']  = $page;
+                $query['limit'] = $limit;
             }
 
-            if (empty($body['data']) || count($body['data']) < $limit) {
+            $body = $this->makeRequest('GET', "{$this->baseUrl}/calls", $query);
+            $data = $body['data'] ?? [];
+
+            if (empty($data)) {
+                if ($useOffset) {
+                    // Fallback to page based pagination
+                    $useOffset = false;
+                    $page      = 1;
+                    $prevFirst = null;
+                    continue;
+                }
                 break;
             }
 
-            $page++;
-        } while (true);
+            $firstId = $data[0]['id'] ?? null;
+            if ($useOffset && $prevFirst !== null && $firstId === $prevFirst && $offset > 0) {
+                // Offset parameters ignored by API, switch to page mode
+                $useOffset = false;
+                $page      = (int)($offset / $limit) + 1;
+                $prevFirst = null;
+                continue;
+            }
+            $prevFirst = $firstId;
+
+            foreach ($data as $call) {
+                yield $call;
+            }
+
+            if (count($data) < $limit) {
+                break;
+            }
+
+            if ($useOffset) {
+                $offset += $limit;
+            } else {
+                $page++;
+            }
+        }
     }
 
     /**
@@ -148,29 +182,53 @@ class RingoverService
             default => $directionRaw,
         };
 
-        $lastState = $call['last_state'] ?? null;
-        $isAnswered = (bool)($call['is_answered'] ?? false);
-        $status = in_array($lastState, ['busy', 'failed'], true)
-            ? $lastState
-            : ($isAnswered ? 'answered' : 'missed');
+        $lastState  = $call['last_state'] ?? null;
+        $answered   = $call['is_answered'] ?? null;
+        $status     = null;
+        if ($lastState !== null || $answered !== null) {
+            if (in_array($lastState, ['busy', 'failed'], true)) {
+                $status = $lastState;
+            } else {
+                $status = (bool)$answered ? 'answered' : 'missed';
+            }
+        }
+
+        $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
 
         return [
-            'ringover_id'  => $call['id']         ?? null,
-            'phone_number' => $call['from_number'] ?? ($call['to_number'] ?? null),
-            'direction'    => $direction,
-            'status'       => $status,
-            'duration'     => $call['incall_duration'] ?? ($call['total_duration'] ?? 0),
-            'recording_url'=> $call['recording_url']  ?? ($call['recording'] ?? null),
-            'start_time'   => $call['start_time']     ?? ($call['started_at'] ?? null),
+            'ringover_id'    => $call['id']            ?? null,
+            'call_id'        => $call['call_id']       ?? null,
+            'phone_number'   => $call['from_number']   ?? ($call['caller_number']   ?? null),
+            'contact_number' => $call['to_number']     ?? ($call['contact_number']  ?? null),
+            'caller_name'    => $call['from_name']     ?? ($call['caller_name']     ?? null),
+            'contact_name'   => $call['to_name']       ?? ($call['contact_name']    ?? null),
+            'direction'      => $direction,
+            'start_time'     => $call['start_time']    ?? ($call['started_at']      ?? null),
+            'total_duration' => $call['total_duration']?? null,
+            'incall_duration'=> $call['incall_duration'] ?? null,
+            'is_answered'    => $answered,
+            'last_state'     => $lastState,
+            'status'         => $status,
+            'duration'       => $duration,
+            'recording_url'  => $call['recording_url'] ?? ($call['recording']       ?? null),
+            'voicemail_url'  => $call['voicemail_url'] ?? null,
         ];
     }
 
     /**
-     * Download a recording URL into storage/recordings.
-     * @return string Local path
+     * Download a recording URL into storage subdirectories.
+     *
+     * @return array{path:string,size:int,duration:int,format:string}
      */
-    public function downloadRecording(string $url, string $dir = 'storage/recordings'): string
+    public function downloadRecording(string $url, string $subdir = 'recordings'): array
     {
+        // Allow absolute paths for testing purposes
+        if (str_contains($subdir, '/') || str_contains($subdir, '\\')) {
+            $dir = $subdir;
+        } else {
+            $dir = "storage/{$subdir}";
+        }
+
         $options = [
             'headers'         => ['Authorization' => $this->apiKey],
             'allow_redirects' => ['max' => 5, 'track_redirects' => true],
@@ -192,6 +250,11 @@ class RingoverService
         $size = (int)$head->getHeaderLine('Content-Length');
         if ($size > 0 && $size > $this->maxSize) {
             throw new RecordingTooLargeException('Recording exceeds size limit');
+        }
+
+        $duration = (int)$head->getHeaderLine('X-Recording-Duration');
+        if ($duration === 0) {
+            $duration = (int)$head->getHeaderLine('X-Ringover-Duration');
         }
 
         $effectiveUrl = $head->getHeaderLine('X-Guzzle-Effective-Url');
@@ -250,7 +313,22 @@ class RingoverService
         if ($real === false) {
             throw new RecordingDownloadException('Failed to resolve recording path');
         }
-        return $real;
+
+        if ($size <= 0) {
+            $size = filesize($real) ?: 0;
+        }
+
+        return [
+            'path'     => $real,
+            'size'     => $size,
+            'duration' => $duration,
+            'format'   => $extension,
+        ];
+    }
+
+    public function downloadVoicemail(string $url): array
+    {
+        return $this->downloadRecording($url, 'voicemails');
     }
 }
 

@@ -23,7 +23,7 @@ class RingoverServiceTest extends TestCase
         return $config;
     }
 
-    public function testGetCallsPagination()
+    public function testGetCallsPaginationOffset()
     {
         $page1 = ['data' => array_map(fn($i) => ['id' => $i], range(1, 100))];
         $page2 = ['data' => [['id' => 101]]];
@@ -43,18 +43,49 @@ class RingoverServiceTest extends TestCase
 
         $first = $history[0]['request'];
         parse_str($first->getUri()->getQuery(), $params1);
-        $this->assertSame('1', $params1['page']);
-        $this->assertSame('100', $params1['limit']);
+        $this->assertSame('0', $params1['limit_offset']);
+        $this->assertSame('100', $params1['limit_count']);
         $this->assertArrayHasKey('start_date', $params1);
 
         $second = $history[1]['request'];
         parse_str($second->getUri()->getQuery(), $params2);
-        $this->assertSame('2', $params2['page']);
+        $this->assertSame('100', $params2['limit_offset']);
+    }
+
+    public function testGetCallsPaginationFallbackToPage()
+    {
+        $page1 = ['data' => array_map(fn($i) => ['id' => $i], range(1, 100))];
+        $dup   = $page1; // API ignoring offset returns same data
+        $page2 = ['data' => [['id' => 101]]];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($page1)),
+            new Response(200, [], json_encode($dup)),
+            new Response(200, [], json_encode($page2))
+        ]);
+        $history = [];
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        $http = new HttpClient(['handler' => $stack]);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $service = new RingoverService($http, $config);
+        $calls = iterator_to_array($service->getCalls(new DateTimeImmutable('2024-01-01T00:00:00Z')));
+        $this->assertCount(101, $calls);
+        $this->assertCount(3, $history);
+
+        parse_str($history[0]['request']->getUri()->getQuery(), $p1);
+        $this->assertSame('0', $p1['limit_offset']);
+
+        parse_str($history[1]['request']->getUri()->getQuery(), $p2);
+        $this->assertSame('100', $p2['limit_offset']);
+
+        parse_str($history[2]['request']->getUri()->getQuery(), $p3);
+        $this->assertSame('2', $p3['page']);
     }
 
     public function testGetCallsConvertsSinceToUtc()
     {
         $mock = new MockHandler([
+            new Response(200, [], json_encode(['data' => []])),
             new Response(200, [], json_encode(['data' => []]))
         ]);
         $history = [];
@@ -91,13 +122,22 @@ class RingoverServiceTest extends TestCase
         $mapped1 = $service->mapCallFields($call1);
 
         $this->assertSame([
-            'ringover_id'   => 'abc',
-            'phone_number'  => '123',
-            'direction'     => 'outbound',
-            'status'        => 'busy',
-            'duration'      => 7,
-            'recording_url' => 'https://r.test/a.wav',
-            'start_time'    => '2024-01-01T00:00:00Z'
+            'ringover_id'    => 'abc',
+            'call_id'        => null,
+            'phone_number'   => '123',
+            'contact_number' => null,
+            'caller_name'    => null,
+            'contact_name'   => null,
+            'direction'      => 'outbound',
+            'start_time'     => '2024-01-01T00:00:00Z',
+            'total_duration' => null,
+            'incall_duration'=> 7,
+            'is_answered'    => null,
+            'last_state'     => 'busy',
+            'status'         => 'busy',
+            'duration'       => 7,
+            'recording_url'  => 'https://r.test/a.wav',
+            'voicemail_url'  => null,
         ], $mapped1);
 
         $call2 = [
@@ -113,13 +153,22 @@ class RingoverServiceTest extends TestCase
         $mapped2 = $service->mapCallFields($call2);
 
         $this->assertSame([
-            'ringover_id'   => 'def',
-            'phone_number'  => '456',
-            'direction'     => 'inbound',
-            'status'        => 'answered',
-            'duration'      => 10,
-            'recording_url' => 'https://r.test/b.wav',
-            'start_time'    => '2024-02-01T00:00:00Z'
+            'ringover_id'    => 'def',
+            'call_id'        => null,
+            'phone_number'   => null,
+            'contact_number' => '456',
+            'caller_name'    => null,
+            'contact_name'   => null,
+            'direction'      => 'inbound',
+            'start_time'     => '2024-02-01T00:00:00Z',
+            'total_duration' => 10,
+            'incall_duration'=> null,
+            'is_answered'    => true,
+            'last_state'     => null,
+            'status'         => 'answered',
+            'duration'       => 10,
+            'recording_url'  => 'https://r.test/b.wav',
+            'voicemail_url'  => null,
         ], $mapped2);
 
         $call3 = [
@@ -131,7 +180,7 @@ class RingoverServiceTest extends TestCase
         ];
 
         $mapped3 = $service->mapCallFields($call3);
-        $this->assertSame('missed', $mapped3['status']);
+        $this->assertFalse($mapped3['is_answered']);
     }
 
     public function testDownloadRecording()
@@ -145,10 +194,12 @@ class RingoverServiceTest extends TestCase
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
         $service = new RingoverService($http, $config);
         $dir = sys_get_temp_dir().'/ringtest';
-        $path = $service->downloadRecording('https://files.test/rec.mp3', $dir);
-        $this->assertFileExists($path);
-        $this->assertSame('audio', file_get_contents($path));
-        unlink($path);
+        $info = $service->downloadRecording('https://files.test/rec.mp3', $dir);
+        $this->assertFileExists($info['path']);
+        $this->assertSame('audio', file_get_contents($info['path']));
+        $this->assertSame(5, $info['size']);
+        $this->assertSame('mp3', $info['format']);
+        unlink($info['path']);
         rmdir($dir);
     }
 
@@ -166,10 +217,10 @@ class RingoverServiceTest extends TestCase
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
         $service = new RingoverService($http, $config);
         $dir = sys_get_temp_dir().'/ringtest';
-        $path = $service->downloadRecording('https://files.test/tmp', $dir);
-        $this->assertStringEndsWith('real.mp3', $path);
-        $this->assertFileExists($path);
-        unlink($path);
+        $info = $service->downloadRecording('https://files.test/tmp', $dir);
+        $this->assertStringEndsWith('real.mp3', $info['path']);
+        $this->assertFileExists($info['path']);
+        unlink($info['path']);
         rmdir($dir);
     }
 
@@ -185,10 +236,10 @@ class RingoverServiceTest extends TestCase
         $service = new RingoverService($http, $config);
         $dir = sys_get_temp_dir().'/ringtest';
         $malicious = 'https://files.test/..%2Fsecret/evil.mp3';
-        $path = $service->downloadRecording($malicious, $dir);
-        $this->assertStringStartsWith($dir, $path);
-        $this->assertFileExists($path);
-        unlink($path);
+        $info = $service->downloadRecording($malicious, $dir);
+        $this->assertStringStartsWith($dir, $info['path']);
+        $this->assertFileExists($info['path']);
+        unlink($info['path']);
         rmdir($dir);
     }
 

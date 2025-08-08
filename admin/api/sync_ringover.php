@@ -104,7 +104,7 @@ try {
         $result = $repo->insertOrIgnore($mapped);
         if ($download && !empty($mapped['recording_url'])) {
             writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $mapped['recording_url']]);
-            $ringoverService->downloadRecording($mapped['recording_url']);
+            $ringoverService->downloadRecording($mapped['recording_url'], 'recordings');
         }
         if ($result > 0) {
             $inserted++;
