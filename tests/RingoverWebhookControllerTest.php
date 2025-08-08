@@ -46,12 +46,12 @@ class RingoverWebhookControllerTest extends TestCase
         $c = $this->container($pdo, $secret);
         $c->instance(RingoverService::class, new class extends RingoverService {
             public function __construct(){}
-            public function downloadRecording(string $url, string $dir = 'storage/recordings'): string
+            public function downloadRecording(string $url, string $dir = 'storage/recordings'): array
             {
                 if (!is_dir($dir)) { mkdir($dir, 0755, true); }
                 $path = $dir . '/test.mp3';
                 file_put_contents($path, 'data');
-                return $path;
+                return ['path' => $path, 'size' => 4, 'duration' => 0, 'format' => 'mp3'];
             }
         });
 

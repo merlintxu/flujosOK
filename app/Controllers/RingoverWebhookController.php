@@ -29,9 +29,9 @@ class RingoverWebhookController extends BaseController
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
-            $localPath = $ringover->downloadRecording($data['recording_url'], 'storage/recordings');
+            $info = $ringover->downloadRecording($data['recording_url'], 'recordings');
 
-            $this->storeRecording($data['call_id'], $data['recording_url'], $localPath, $data['duration'] ?? 0);
+            $this->storeRecording($data['call_id'], $data['recording_url'], $info['path'], $info['duration']);
 
             return $this->successResponse(['stored' => true]);
         } catch (\Exception $e) {
@@ -57,9 +57,9 @@ class RingoverWebhookController extends BaseController
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
-            $localPath = $ringover->downloadRecording($data['voicemail_url'], 'storage/voicemails');
+            $info = $ringover->downloadVoicemail($data['voicemail_url']);
 
-            $this->storeRecording($data['call_id'], $data['voicemail_url'], $localPath, $data['duration'] ?? 0);
+            $this->storeRecording($data['call_id'], $data['voicemail_url'], $info['path'], $info['duration']);
 
             return $this->successResponse(['stored' => true]);
         } catch (\Exception $e) {

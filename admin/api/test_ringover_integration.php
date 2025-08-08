@@ -71,8 +71,8 @@ try {
     }
 
     try {
-        $path = $ringover->downloadRecording($mapped['recording_url']);
-        log_line('Recording downloaded to ' . $path);
+        $info = $ringover->downloadRecording($mapped['recording_url'], 'recordings');
+        log_line('Recording downloaded to ' . $info['path']);
     } catch (Throwable $e) {
         log_line('Recording download failed: ' . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Recording download failed']);
