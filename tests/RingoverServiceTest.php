@@ -22,11 +22,14 @@ class RingoverServiceTest extends TestCase
         }
         return $config;
     }
+
     public function testGetCallsPagination()
     {
+        $page1 = ['data' => array_map(fn($i) => ['id' => $i], range(1, 100))];
+        $page2 = ['data' => [['id' => 101]]];
         $mock = new MockHandler([
-            new Response(200, ['Link' => '<https://api.test/calls?page=2>; rel="next"'], json_encode(['data' => [['id' => 1]]])),
-            new Response(200, [], json_encode(['data' => [['id' => 2]]]))
+            new Response(200, [], json_encode($page1)),
+            new Response(200, [], json_encode($page2))
         ]);
         $history = [];
         $stack = HandlerStack::create($mock);
@@ -35,12 +38,20 @@ class RingoverServiceTest extends TestCase
         $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
         $service = new RingoverService($http, $config);
         $calls = iterator_to_array($service->getCalls(new DateTimeImmutable('2024-01-01T00:00:00Z')));
-        $this->assertCount(2, $calls);
+        $this->assertCount(101, $calls);
         $this->assertCount(2, $history);
+
         $first = $history[0]['request'];
-        $this->assertSame('GET', $first->getMethod());
-        $this->assertStringContainsString('date_start', $first->getUri()->getQuery());
+        parse_str($first->getUri()->getQuery(), $params1);
+        $this->assertSame('1', $params1['page']);
+        $this->assertSame('100', $params1['limit']);
+        $this->assertArrayHasKey('start_date', $params1);
+
+        $second = $history[1]['request'];
+        parse_str($second->getUri()->getQuery(), $params2);
+        $this->assertSame('2', $params2['page']);
     }
+
     public function testGetCallsConvertsSinceToUtc()
     {
         $mock = new MockHandler([
@@ -58,9 +69,8 @@ class RingoverServiceTest extends TestCase
 
         $req = $history[0]['request'];
         parse_str($req->getUri()->getQuery(), $params);
-        $this->assertSame('2024-01-01T00:30:00+00:00', $params['date_start']);
+        $this->assertSame('2024-01-01T00:30:00+00:00', $params['start_date']);
     }
-
 
     public function testDownloadRecording()
     {
