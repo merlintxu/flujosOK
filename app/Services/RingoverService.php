@@ -141,12 +141,25 @@ class RingoverService
      */
     public function mapCallFields(array $call): array
     {
+        $directionRaw = $call['direction'] ?? ($call['type'] ?? null);
+        $direction    = match ($directionRaw) {
+            'in'  => 'inbound',
+            'out' => 'outbound',
+            default => $directionRaw,
+        };
+
+        $lastState = $call['last_state'] ?? null;
+        $isAnswered = (bool)($call['is_answered'] ?? false);
+        $status = in_array($lastState, ['busy', 'failed'], true)
+            ? $lastState
+            : ($isAnswered ? 'answered' : 'missed');
+
         return [
-            'ringover_id'  => $call['id']             ?? null,
-            'phone_number' => $call['contact_number'] ?? ($call['from_number'] ?? ($call['to_number'] ?? null)),
-            'direction'    => $call['direction']      ?? ($call['type'] ?? null),
-            'status'       => $call['status']         ?? ($call['last_state'] ?? null),
-            'duration'     => $call['duration']       ?? ($call['total_duration'] ?? 0),
+            'ringover_id'  => $call['id']         ?? null,
+            'phone_number' => $call['from_number'] ?? ($call['to_number'] ?? null),
+            'direction'    => $direction,
+            'status'       => $status,
+            'duration'     => $call['incall_duration'] ?? ($call['total_duration'] ?? 0),
             'recording_url'=> $call['recording_url']  ?? ($call['recording'] ?? null),
             'start_time'   => $call['start_time']     ?? ($call['started_at'] ?? null),
         ];
