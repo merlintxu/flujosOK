@@ -35,7 +35,7 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
         $service = new RingoverService($http, $config);
         $calls = iterator_to_array($service->getCalls(new DateTimeImmutable('2024-01-01T00:00:00Z')));
         $this->assertCount(101, $calls);
@@ -61,7 +61,7 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
         $service = new RingoverService($http, $config);
 
         $since = new DateTimeImmutable('2024-01-01 01:30:00', new \DateTimeZone('Europe/Madrid'));
@@ -80,7 +80,7 @@ class RingoverServiceTest extends TestCase
         ]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
         $service = new RingoverService($http, $config);
         $dir = sys_get_temp_dir().'/ringtest';
         $path = $service->downloadRecording('https://files.test/rec.mp3', $dir);
@@ -98,7 +98,7 @@ class RingoverServiceTest extends TestCase
         ]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
         $service = new RingoverService($http, $config);
         $dir = sys_get_temp_dir().'/ringtest';
         $malicious = 'https://files.test/..%2Fsecret/evil.mp3';
@@ -118,7 +118,7 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg([
-            'RINGOVER_API_TOKEN' => 't',
+            'RINGOVER_API_KEY' => 't',
             'RINGOVER_MAX_RECORDING_MB' => 1
         ]);
         $service = new RingoverService($http, $config);
@@ -147,7 +147,7 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
         $service = new RingoverService($http, $config);
         $result = $service->testConnection();
         $this->assertTrue($result['success']);
@@ -161,13 +161,13 @@ class RingoverServiceTest extends TestCase
         $mock = new MockHandler([new Response(500)]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_TOKEN' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
         $service = new RingoverService($http, $config);
         $result = $service->testConnection();
         $this->assertFalse($result['success']);
     }
 
-    public function testUsesConfiguredUrlAndToken()
+    public function testUsesConfiguredUrlAndKey()
     {
         $mock = new MockHandler([new Response(200)]);
         $history = [];
@@ -176,7 +176,7 @@ class RingoverServiceTest extends TestCase
         $http = new HttpClient(['handler' => $stack]);
 
         $config = $this->cfg([
-            'RINGOVER_API_TOKEN' => 'secret-token',
+            'RINGOVER_API_KEY' => 'secret-token',
             'RINGOVER_API_URL'   => 'https://api.config-test'
         ]);
 

@@ -88,12 +88,12 @@ function recentCalls(int $n = 10): array {
 }
 
 function apiHealth(): array {
-    $oKey = $_ENV['OPENAI_API_KEY']     ?? '';
-    $rTok = $_ENV['RINGOVER_API_TOKEN'] ?? '';
-    $pTok = $_ENV['PIPEDRIVE_API_TOKEN']?? '';
+    $oKey = $_ENV['OPENAI_API_KEY']    ?? '';
+    $rKey = $_ENV['RINGOVER_API_KEY'] ?? '';
+    $pTok = $_ENV['PIPEDRIVE_API_TOKEN'] ?? '';
 
     $openai    = $oKey && getHttpCode('https://api.openai.com/v1/models', ['Authorization: Bearer '.$oKey]) === 200;
-    $ringover  = $rTok && getHttpCode('https://public-api.ringover.com/v2/calls', ['Authorization: '.$rTok]) === 200;
+    $ringover  = $rKey && getHttpCode('https://public-api.ringover.com/v2/calls', ['Authorization: '.$rKey]) === 200;
     $pipedrive = $pTok && getHttpCode('https://api.pipedrive.com/v1/users?api_token='.$pTok) === 200;
 
     return ['database'=>true,'ringover'=>$ringover,'openai'=>$openai,'pipedrive'=>$pipedrive];

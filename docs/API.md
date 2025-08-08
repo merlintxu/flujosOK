@@ -52,3 +52,10 @@ curl -X POST /api/webhooks \
 ```
 
 Additional routes exist for testing external APIs and for analytics endpoints as defined in the application.
+
+### Ringover webhook callbacks
+Ringover env\u00eda eventos como `recording.available` o `voicemail.available` a
+`/api/webhooks/ringover/record-available` y `/api/webhooks/ringover/voicemail-available`.
+Cada solicitud incluye el encabezado `X-Ringover-Signature` calculado con HMAC
+SHA-256. La aplicación valida esta firma usando `RINGOVER_WEBHOOK_SECRET` antes
+de procesar la grabación.
