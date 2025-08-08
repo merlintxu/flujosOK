@@ -16,6 +16,7 @@ class RingoverWebhookControllerTest extends TestCase
         $c->instance('logger', new class { public function error(...$a){} public function info(...$a){} });
         $c->instance('config', ['RINGOVER_WEBHOOK_SECRET' => $secret]);
         $c->instance('database', $pdo);
+        $c->instance(\FlujosDimension\Repositories\CallRepository::class, new \FlujosDimension\Repositories\CallRepository($pdo));
         return $c;
     }
 
@@ -60,14 +61,17 @@ class RingoverWebhookControllerTest extends TestCase
         $this->assertSame(200, $resp->getStatusCode());
         $data = json_decode($resp->getContent(), true);
         $this->assertTrue($data['success']);
+        $this->assertNotEmpty($data['data']['path']);
+        $this->assertGreaterThan(0, $data['data']['recording_id']);
 
         $call = $pdo->query("SELECT recording_url, recording_path, has_recording FROM calls WHERE ringover_id='r1'")->fetch();
         $this->assertSame('http://example.com/a.mp3', $call['recording_url']);
         $this->assertNotEmpty($call['recording_path']);
         $this->assertSame(1, (int)$call['has_recording']);
 
-        $count = $pdo->query('SELECT COUNT(*) FROM call_recordings')->fetchColumn();
-        $this->assertSame(1, (int)$count);
+        $rec = $pdo->query('SELECT file_path, duration FROM call_recordings')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame($data['data']['path'], $rec['file_path']);
+        $this->assertSame(5, (int)$rec['duration']);
     }
 
     public function testInvalidSignatureRejected(): void
