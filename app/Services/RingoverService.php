@@ -158,16 +158,36 @@ class RingoverService
      */
     public function downloadRecording(string $url, string $dir = 'storage/recordings'): string
     {
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        $options = [
+            'headers'         => ['Authorization' => $this->apiKey],
+            'allow_redirects' => ['max' => 5, 'track_redirects' => true],
+        ];
+
+        $head = $this->http->request('HEAD', $url, $options);
+        if (in_array($head->getStatusCode(), [401, 403], true)) {
+            $head = $this->http->request('HEAD', $url, ['allow_redirects' => ['max' => 5, 'track_redirects' => true]]);
         }
 
-        $resp = $this->http->request('GET', $url, ['headers' => ['Authorization' => $this->apiKey]]);
-        if ($resp->getStatusCode() !== 200) {
-            throw new RuntimeException('Failed to download recording');
+        $status = $head->getStatusCode();
+        if ($status !== 200) {
+            if (in_array($status, [401, 403], true)) {
+                throw new RecordingUnauthorizedException('Unauthorized recording request');
+            }
+            throw new RecordingDownloadException("Failed to retrieve recording headers: {$status}");
         }
 
-        $path     = parse_url($url, PHP_URL_PATH) ?: '';
+        $size = (int)$head->getHeaderLine('Content-Length');
+        if ($size > 0 && $size > $this->maxSize) {
+            throw new RecordingTooLargeException('Recording exceeds size limit');
+        }
+
+        $effectiveUrl = $head->getHeaderLine('X-Guzzle-Effective-Url');
+        if ($effectiveUrl === '') {
+            $history = $head->getHeader('X-Guzzle-Redirect-History');
+            $effectiveUrl = $history ? end($history) : $url;
+        }
+
+        $path     = parse_url($effectiveUrl, PHP_URL_PATH) ?: '';
         $basename = basename($path);
 
         // sanitize directory traversal characters
@@ -176,14 +196,30 @@ class RingoverService
         $extension = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
         $allowed   = ['mp3', 'wav', 'ogg', 'm4a'];
         if ($extension === '' || !in_array($extension, $allowed, true)) {
-            throw new RuntimeException('Invalid recording extension');
+            throw new RecordingExtensionException('Invalid recording extension');
+        }
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
         }
 
         $filename = $dir . '/' . $basename;
 
-        $body = $resp->getBody();
-        $fp   = fopen($filename, 'wb');
-        $total = 0;
+        $resp = $this->http->request('GET', $url, $options);
+        if (in_array($resp->getStatusCode(), [401, 403], true)) {
+            $resp = $this->http->request('GET', $url, ['allow_redirects' => ['max' => 5, 'track_redirects' => true]]);
+        }
+        $status = $resp->getStatusCode();
+        if ($status !== 200) {
+            if (in_array($status, [401, 403], true)) {
+                throw new RecordingUnauthorizedException('Unauthorized recording request');
+            }
+            throw new RecordingDownloadException('Failed to download recording');
+        }
+
+        $body   = $resp->getBody();
+        $fp     = fopen($filename, 'wb');
+        $total  = 0;
 
         while (!$body->eof()) {
             $chunk = $body->read(8192);
@@ -191,12 +227,22 @@ class RingoverService
             if ($total > $this->maxSize) {
                 fclose($fp);
                 unlink($filename);
-                throw new RuntimeException('Recording exceeds size limit');
+                throw new RecordingTooLargeException('Recording exceeds size limit');
             }
             fwrite($fp, $chunk);
         }
 
         fclose($fp);
-        return $filename;
+        $real = realpath($filename);
+        if ($real === false) {
+            throw new RecordingDownloadException('Failed to resolve recording path');
+        }
+        return $real;
     }
 }
+
+class RecordingException extends RuntimeException {}
+class RecordingUnauthorizedException extends RecordingException {}
+class RecordingTooLargeException extends RecordingException {}
+class RecordingDownloadException extends RecordingException {}
+class RecordingExtensionException extends RecordingException {}

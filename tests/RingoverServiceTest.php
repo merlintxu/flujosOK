@@ -10,7 +10,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use FlujosDimension\Core\Config;
-use RuntimeException;
+use FlujosDimension\Services\RecordingTooLargeException;
 
 class RingoverServiceTest extends TestCase
 {
@@ -74,7 +74,10 @@ class RingoverServiceTest extends TestCase
 
     public function testDownloadRecording()
     {
-        $mock = new MockHandler([new Response(200, [], 'audio')]);
+        $mock = new MockHandler([
+            new Response(200, ['Content-Length' => 5]),
+            new Response(200, [], 'audio')
+        ]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_TOKEN' => 't']);
@@ -89,7 +92,10 @@ class RingoverServiceTest extends TestCase
 
     public function testDownloadRecordingSanitizesPath()
     {
-        $mock = new MockHandler([new Response(200, [], 'audio')]);
+        $mock = new MockHandler([
+            new Response(200, ['Content-Length' => 5]),
+            new Response(200, [], 'audio')
+        ]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_TOKEN' => 't']);
@@ -105,8 +111,10 @@ class RingoverServiceTest extends TestCase
 
     public function testDownloadRecordingHonorsSizeLimit()
     {
-        $data = str_repeat('a', 1024 * 1024 + 1);
-        $mock = new MockHandler([new Response(200, [], $data)]);
+        $size = 1024 * 1024 + 1;
+        $mock = new MockHandler([
+            new Response(200, ['Content-Length' => $size])
+        ]);
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg([
@@ -119,7 +127,7 @@ class RingoverServiceTest extends TestCase
         try {
             $service->downloadRecording('https://files.test/big.mp3', $dir);
             $this->fail('Expected exception not thrown');
-        } catch (RuntimeException $e) {
+        } catch (RecordingTooLargeException $e) {
             $this->assertStringContainsString('size', $e->getMessage());
         }
 
