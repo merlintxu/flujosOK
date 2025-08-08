@@ -134,6 +134,25 @@ class RingoverService
     }
 
     /**
+     * Map raw Ringover call data to internal call fields.
+     *
+     * @param array<string,mixed> $call
+     * @return array<string,mixed>
+     */
+    public function mapCallFields(array $call): array
+    {
+        return [
+            'ringover_id'  => $call['id']             ?? null,
+            'phone_number' => $call['contact_number'] ?? ($call['from_number'] ?? ($call['to_number'] ?? null)),
+            'direction'    => $call['direction']      ?? ($call['type'] ?? null),
+            'status'       => $call['status']         ?? ($call['last_state'] ?? null),
+            'duration'     => $call['duration']       ?? ($call['total_duration'] ?? 0),
+            'recording_url'=> $call['recording_url']  ?? ($call['recording'] ?? null),
+            'start_time'   => $call['start_time']     ?? ($call['started_at'] ?? null),
+        ];
+    }
+
+    /**
      * Download a recording URL into storage/recordings.
      * @return string Local path
      */

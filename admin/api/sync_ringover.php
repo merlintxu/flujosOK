@@ -100,10 +100,11 @@ try {
 
         $retrieved++;
         writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
-        $result = $repo->insertOrIgnore($call);
-        if ($download && !empty($call['recording_url'])) {
-            writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $call['recording_url']]);
-            $ringoverService->downloadRecording($call['recording_url']);
+        $mapped = $ringoverService->mapCallFields($call);
+        $result = $repo->insertOrIgnore($mapped);
+        if ($download && !empty($mapped['recording_url'])) {
+            writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $mapped['recording_url']]);
+            $ringoverService->downloadRecording($mapped['recording_url']);
         }
         if ($result > 0) {
             $inserted++;
