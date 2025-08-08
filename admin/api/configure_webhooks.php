@@ -12,7 +12,7 @@ $config = $container->resolve(Config::class);
 $http   = $container->resolve(HttpClient::class);
 
 $baseUrl   = rtrim((string)$config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2'), '/');
-$apiKey    = (string)$config->get('RINGOVER_API_TOKEN', '');
+$apiKey    = (string)$config->get('RINGOVER_API_KEY', '');
 $appUrl    = rtrim((string)$config->get('APP_URL', 'https://example.com'), '/');
 $webhookBase = $appUrl . '/api/v3/webhooks/ringover';
 

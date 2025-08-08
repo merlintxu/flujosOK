@@ -147,7 +147,7 @@ class Config
             $sections = [
                 'ADMINISTRADOR DEL SISTEMA' => ['ADMIN_USER', 'ADMIN_PASS'],
                 'BASE DE DATOS' => ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS'],
-                'API RINGOVER' => ['RINGOVER_API_URL', 'RINGOVER_API_TOKEN'],
+                'API RINGOVER' => ['RINGOVER_API_URL', 'RINGOVER_API_KEY', 'RINGOVER_WEBHOOK_SECRET', 'RINGOVER_MAX_RECORDING_MB'],
                 'API OPENAI' => ['OPENAI_API_URL', 'OPENAI_API_KEY'],
                 'API PIPEDRIVE' => ['PIPEDRIVE_API_URL', 'PIPEDRIVE_API_TOKEN'],
                 'SEGURIDAD Y JWT' => ['JWT_SECRET', 'JWT_EXPIRATION_HOURS', 'APP_ENV', 'APP_DEBUG'],
@@ -220,8 +220,10 @@ class Config
         switch (strtolower($api)) {
             case 'ringover':
                 return [
-                    'url' => $this->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2'),
-                    'token' => $this->get('RINGOVER_API_TOKEN', '')
+                    'url'    => $this->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2'),
+                    'key'    => $this->get('RINGOVER_API_KEY', ''),
+                    'secret' => $this->get('RINGOVER_WEBHOOK_SECRET', ''),
+                    'max_mb' => (int)$this->get('RINGOVER_MAX_RECORDING_MB', 100),
                 ];
                 
             case 'openai':

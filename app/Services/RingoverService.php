@@ -28,7 +28,7 @@ class RingoverService
     {
         $this->http    = $http;
         $this->config  = $config;
-        $this->apiKey  = $config->get('RINGOVER_API_TOKEN', '');
+        $this->apiKey  = $config->get('RINGOVER_API_KEY', '');
         $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
         $limitMb       = (int)$config->get('RINGOVER_MAX_RECORDING_MB', 100);
         $this->maxSize = $limitMb * 1024 * 1024;

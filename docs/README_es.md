@@ -51,3 +51,32 @@ curl -X POST https://localhost/api/webhooks \
   -d "url=https://ejemplo.com/hook" \
   -d "event=call.finished"
 ```
+
+## Variables de entorno
+
+### Base de datos
+- `DB_HOST`: servidor de la base de datos.
+- `DB_PORT`: puerto de conexión.
+- `DB_NAME`: nombre de la base de datos.
+- `DB_USER`: usuario de conexión.
+- `DB_PASS`: contraseña del usuario.
+
+### API Ringover
+- `RINGOVER_API_URL`: URL base de la API.
+- `RINGOVER_API_KEY`: clave utilizada en el encabezado `Authorization`.
+- `RINGOVER_WEBHOOK_SECRET`: secreto para verificar las firmas de los webhooks.
+- `RINGOVER_MAX_RECORDING_MB`: tamaño máximo permitido para descargar grabaciones (MB).
+
+### API OpenAI
+- `OPENAI_API_URL`: URL base de la API de OpenAI.
+- `OPENAI_API_KEY`: clave de autenticación para OpenAI.
+- `OPENAI_MODEL`: modelo de transcripción a utilizar.
+
+### API Pipedrive
+- `PIPEDRIVE_API_URL`: URL base de la API de Pipedrive.
+- `PIPEDRIVE_API_TOKEN`: token de autenticación de Pipedrive.
+
+### Seguridad y administración
+- `JWT_SECRET`: secreto para firmar tokens JWT.
+- `ADMIN_USER`: usuario del panel de administración.
+- `ADMIN_PASS`: contraseña encriptada para el panel.

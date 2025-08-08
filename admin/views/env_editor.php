@@ -237,7 +237,7 @@
                 'Base de Datos' => !empty($this->config->get('DB_HOST')) && !empty($this->config->get('DB_NAME')),
                 'Administrador' => !empty($this->config->get('ADMIN_USER')) && !empty($this->config->get('ADMIN_PASS')),
                 'JWT Secret' => !empty($this->config->get('JWT_SECRET')),
-                'API Ringover' => !empty($this->config->get('RINGOVER_API_TOKEN')),
+                'API Ringover' => !empty($this->config->get('RINGOVER_API_KEY')),
                 'API OpenAI' => !empty($this->config->get('OPENAI_API_KEY')),
                 'API Pipedrive' => !empty($this->config->get('PIPEDRIVE_API_TOKEN'))
             ];
@@ -308,10 +308,15 @@
                                value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2')); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="RINGOVER_API_TOKEN">Token de API Ringover</label>
-                        <input type="text" id="RINGOVER_API_TOKEN" name="RINGOVER_API_TOKEN"
-                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_TOKEN', '')); ?>" required>
+                        <label for="RINGOVER_API_KEY">Clave de API Ringover</label>
+                        <input type="text" id="RINGOVER_API_KEY" name="RINGOVER_API_KEY"
+                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_KEY', '')); ?>" required>
                         <button type="button" class="test-btn" onclick="testRingoverApi()">Probar</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="RINGOVER_WEBHOOK_SECRET">Secreto de Webhook</label>
+                        <input type="text" id="RINGOVER_WEBHOOK_SECRET" name="RINGOVER_WEBHOOK_SECRET"
+                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_WEBHOOK_SECRET', '')); ?>">
                     </div>
                     <div class="form-group">
                         <label for="RINGOVER_MAX_RECORDING_MB">Tamaño máximo grabación (MB)</label>
@@ -400,13 +405,13 @@
 
     <script>
         function testRingoverApi() {
-            const token = document.getElementById('RINGOVER_API_TOKEN').value;
+            const token = document.getElementById('RINGOVER_API_KEY').value;
             if (!token) {
-                alert('Por favor, introduce el token de Ringover primero');
+                alert('Por favor, introduce la clave de Ringover primero');
                 return;
             }
-            
-            alert('Función de test de Ringover en desarrollo. Token configurado: ' + (token ? 'Sí' : 'No'));
+
+            alert('Función de test de Ringover en desarrollo. Clave configurada: ' + (token ? 'Sí' : 'No'));
         }
         
         function testOpenAiApi() {
