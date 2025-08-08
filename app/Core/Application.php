@@ -25,6 +25,7 @@ class Application
         $this->initializeCore();
         $this->registerServices();
         $this->setupErrorHandling();
+        $this->ensureStorageDirectories();
     }
     
     /**
@@ -196,6 +197,23 @@ private function registerServices(): void
         set_error_handler([$this->errorHandler, 'handleError']);
         set_exception_handler([$this->errorHandler, 'handleException']);
         register_shutdown_function([$this->errorHandler, 'handleShutdown']);
+    }
+
+    /**
+     * Ensure recordings and voicemails storage directories exist and are writable.
+     */
+    private function ensureStorageDirectories(): void
+    {
+        $base = dirname(__DIR__, 2) . '/storage';
+        foreach (['recordings', 'voicemails'] as $subdir) {
+            $path = $base . '/' . $subdir;
+            if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
+                throw new \RuntimeException("Unable to create directory: {$path}");
+            }
+            if (!is_writable($path)) {
+                throw new \RuntimeException("Directory {$path} is not writable");
+            }
+        }
     }
     
     /**
