@@ -72,6 +72,35 @@ class RingoverServiceTest extends TestCase
         $this->assertSame('2024-01-01T00:30:00+00:00', $params['start_date']);
     }
 
+    public function testMapCallFieldsTransforms()
+    {
+        $http = new HttpClient();
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
+        $service = new RingoverService($http, $config);
+
+        $call = [
+            'id'            => 'abc',
+            'from_number'   => '123',
+            'type'          => 'out',
+            'last_state'    => 'done',
+            'total_duration'=> 42,
+            'recording'     => 'https://r.test/a.wav',
+            'started_at'    => '2024-01-01T00:00:00Z'
+        ];
+
+        $mapped = $service->mapCallFields($call);
+
+        $this->assertSame([
+            'ringover_id'   => 'abc',
+            'phone_number'  => '123',
+            'direction'     => 'out',
+            'status'        => 'done',
+            'duration'      => 42,
+            'recording_url' => 'https://r.test/a.wav',
+            'start_time'    => '2024-01-01T00:00:00Z'
+        ], $mapped);
+    }
+
     public function testDownloadRecording()
     {
         $mock = new MockHandler([
@@ -86,6 +115,27 @@ class RingoverServiceTest extends TestCase
         $path = $service->downloadRecording('https://files.test/rec.mp3', $dir);
         $this->assertFileExists($path);
         $this->assertSame('audio', file_get_contents($path));
+        unlink($path);
+        rmdir($dir);
+    }
+
+    public function testDownloadRecordingUsesRedirectedFilename()
+    {
+        $mock = new MockHandler([
+            new Response(200, [
+                'Content-Length'           => 5,
+                'X-Guzzle-Redirect-History'=> ['https://files.test/tmp', 'https://files.test/real.mp3']
+            ]),
+            new Response(200, [], 'audio')
+        ]);
+        $stack = HandlerStack::create($mock);
+        $http = new HttpClient(['handler' => $stack]);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
+        $service = new RingoverService($http, $config);
+        $dir = sys_get_temp_dir().'/ringtest';
+        $path = $service->downloadRecording('https://files.test/tmp', $dir);
+        $this->assertStringEndsWith('real.mp3', $path);
+        $this->assertFileExists($path);
         unlink($path);
         rmdir($dir);
     }
@@ -138,6 +188,32 @@ class RingoverServiceTest extends TestCase
         if (is_dir($dir)) {
             rmdir($dir);
         }
+    }
+
+    public function testMakeRequestRetriesWithBackoff()
+    {
+        $mock = new MockHandler([
+            new Response(500),
+            new Response(200, [], json_encode(['ok' => true]))
+        ]);
+        $history = [];
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        $http = new HttpClient(['handler' => $stack], 0);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
+        $service = new RingoverService($http, $config);
+        $ref = new \ReflectionClass($service);
+        $prop = $ref->getProperty('lastRequestAt');
+        $prop->setAccessible(true);
+        $prop->setValue($service, microtime(true) - 1);
+        $method = $ref->getMethod('makeRequest');
+        $method->setAccessible(true);
+        $start = microtime(true);
+        $result = $method->invoke($service, 'GET', 'https://api.test/data');
+        $elapsed = microtime(true) - $start;
+        $this->assertSame(['ok' => true], $result);
+        $this->assertCount(2, $history);
+        $this->assertGreaterThan(0.5, $elapsed);
     }
 
     public function testTestConnectionSuccess()
