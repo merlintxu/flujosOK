@@ -78,27 +78,60 @@ class RingoverServiceTest extends TestCase
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
         $service = new RingoverService($http, $config);
 
-        $call = [
-            'id'            => 'abc',
-            'from_number'   => '123',
-            'type'          => 'out',
-            'last_state'    => 'done',
-            'total_duration'=> 42,
-            'recording'     => 'https://r.test/a.wav',
-            'started_at'    => '2024-01-01T00:00:00Z'
+        $call1 = [
+            'id'             => 'abc',
+            'from_number'    => '123',
+            'direction'      => 'out',
+            'last_state'     => 'busy',
+            'incall_duration'=> 7,
+            'recording_url'  => 'https://r.test/a.wav',
+            'start_time'     => '2024-01-01T00:00:00Z'
         ];
 
-        $mapped = $service->mapCallFields($call);
+        $mapped1 = $service->mapCallFields($call1);
 
         $this->assertSame([
             'ringover_id'   => 'abc',
             'phone_number'  => '123',
-            'direction'     => 'out',
-            'status'        => 'done',
-            'duration'      => 42,
+            'direction'     => 'outbound',
+            'status'        => 'busy',
+            'duration'      => 7,
             'recording_url' => 'https://r.test/a.wav',
             'start_time'    => '2024-01-01T00:00:00Z'
-        ], $mapped);
+        ], $mapped1);
+
+        $call2 = [
+            'id'             => 'def',
+            'to_number'      => '456',
+            'direction'      => 'in',
+            'is_answered'    => true,
+            'total_duration' => 10,
+            'recording'      => 'https://r.test/b.wav',
+            'started_at'     => '2024-02-01T00:00:00Z'
+        ];
+
+        $mapped2 = $service->mapCallFields($call2);
+
+        $this->assertSame([
+            'ringover_id'   => 'def',
+            'phone_number'  => '456',
+            'direction'     => 'inbound',
+            'status'        => 'answered',
+            'duration'      => 10,
+            'recording_url' => 'https://r.test/b.wav',
+            'start_time'    => '2024-02-01T00:00:00Z'
+        ], $mapped2);
+
+        $call3 = [
+            'id'          => 'ghi',
+            'to_number'   => '789',
+            'direction'   => 'in',
+            'is_answered' => false,
+            'total_duration' => 0
+        ];
+
+        $mapped3 = $service->mapCallFields($call3);
+        $this->assertSame('missed', $mapped3['status']);
     }
 
     public function testDownloadRecording()
