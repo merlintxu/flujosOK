@@ -275,6 +275,10 @@ private function registerServices(): void
                 // Webhooks
                 $router->post('/webhooks', 'WebhookController@create');
 
+                // Ringover specific webhooks
+                $router->post('/webhooks/ringover/record-available', 'RingoverWebhookController@recordAvailable');
+                $router->post('/webhooks/ringover/voicemail-available', 'RingoverWebhookController@voicemailAvailable');
+
                 // Sync and token
                 $router->post('/sync/hourly', 'SyncController@hourly');
                 $router->post('/sync/manual', 'SyncController@manual');
