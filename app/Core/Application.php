@@ -279,6 +279,22 @@ private function registerServices(): void
                 $router->post('/webhooks/ringover/record-available', 'RingoverWebhookController@recordAvailable');
                 $router->post('/webhooks/ringover/voicemail-available', 'RingoverWebhookController@voicemailAvailable');
 
+                // Allow preflight CORS requests and bypass CSRF
+                $router->options('/webhooks/ringover/record-available', function() {
+                    return new Response('', 204, [
+                        'Access-Control-Allow-Origin' => '*',
+                        'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers' => 'Content-Type, X-Ringover-Signature'
+                    ]);
+                });
+                $router->options('/webhooks/ringover/voicemail-available', function() {
+                    return new Response('', 204, [
+                        'Access-Control-Allow-Origin' => '*',
+                        'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                        'Access-Control-Allow-Headers' => 'Content-Type, X-Ringover-Signature'
+                    ]);
+                });
+
                 // Sync and token
                 $router->post('/sync/hourly', 'SyncController@hourly');
                 $router->post('/sync/manual', 'SyncController@manual');
