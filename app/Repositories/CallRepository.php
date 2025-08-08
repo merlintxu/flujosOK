@@ -104,6 +104,26 @@ final class CallRepository
     }
 
     /**
+     * Retrieve the internal ID for a given Ringover ID.
+     */
+    public function findIdByRingoverId(string $ringoverId): ?int
+    {
+        $stmt = $this->db->prepare('SELECT id FROM calls WHERE ringover_id = :rid');
+        $stmt->execute([':rid' => $ringoverId]);
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int)$id;
+    }
+
+    /**
+     * Mark whether a call has pending recordings to download.
+     */
+    public function setPendingRecordings(int $callId, bool $pending): void
+    {
+        $stmt = $this->db->prepare('UPDATE calls SET pending_recordings = :p WHERE id = :id');
+        $stmt->execute([':p' => $pending ? 1 : 0, ':id' => $callId]);
+    }
+
+    /**
      * Persist recording metadata for a call and mark it as having a recording.
      *
      * @param array{url?:string,path?:string,file_path?:string,size?:int,file_size?:int,duration?:int,format?:string} $recordInfo
