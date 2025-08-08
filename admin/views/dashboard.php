@@ -514,6 +514,11 @@
                     <button class="btn" onclick="testApi('pipedrive', 'search')">Buscar Contacto</button>
                     <div id="pipedrive-result" class="test-result" style="display: none;"></div>
                 </div>
+                <div class="api-section">
+                    <h4>🧪 PHPUnit</h4>
+                    <button class="btn" onclick="runPhpunit()">Run Tests</button>
+                    <pre id="phpunit-result" class="test-result" style="display: none;"></pre>
+                </div>
             </div>
         </div>
     </div>
@@ -558,6 +563,23 @@
                     resultDiv.className = 'test-result test-error';
                     resultDiv.innerHTML = '<strong>❌ Error de conexión</strong><br>' + error.message;
                 });
+        }
+
+        function runPhpunit() {
+            const resultDiv = document.getElementById('phpunit-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '';
+            fetch('api/run_phpunit.php').then(async response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const {value, done} = await reader.read();
+                    if (done) break;
+                    resultDiv.textContent += decoder.decode(value);
+                }
+            }).catch(error => {
+                resultDiv.textContent = 'Error: ' + error.message;
+            });
         }
         
         function generateNewToken() {

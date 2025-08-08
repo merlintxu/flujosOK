@@ -515,7 +515,9 @@ $apisStatus  = apiHealth();
         <button class="btn" id="btn-test-openai">Test OpenAI</button>
         <button class="btn" id="btn-test-ringover">Test Ringover</button>
         <button class="btn" id="btn-test-pipedrive">Test Pipedrive</button>
+        <button class="btn" id="btn-run-phpunit">Run PHPUnit</button>
         <div id="test-res"></div>
+        <pre id="phpunit-output"></pre>
     </div>
 </div>
 
@@ -571,10 +573,24 @@ document.getElementById('btn-push-crm').onclick=async()=>{
 document.getElementById('btn-test-openai').onclick=()=>doTest('openai');
 document.getElementById('btn-test-ringover').onclick=()=>doTest('ringover');
 document.getElementById('btn-test-pipedrive').onclick=()=>doTest('pipedrive');
+document.getElementById('btn-run-phpunit').onclick=runPhpunit;
 async function doTest(which){
   const fd=new FormData();fd.append('action','check_api_status');
   const res=await post('',fd);
   document.getElementById('test-res').textContent=which.toUpperCase()+': '+(res.apis[which]?'OK':'FAIL');
+}
+
+async function runPhpunit(){
+  const out=document.getElementById('phpunit-output');
+  out.textContent='';
+  const response = await fetch('api/run_phpunit.php');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  while(true){
+    const {value, done} = await reader.read();
+    if(done) break;
+    out.textContent += decoder.decode(value);
+  }
 }
 
 /* --------- Utils --------- */
