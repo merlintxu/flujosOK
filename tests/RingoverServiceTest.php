@@ -313,7 +313,7 @@ class RingoverServiceTest extends TestCase
         $this->assertTrue($result['success']);
         $this->assertCount(1, $history);
         $req = $history[0]['request'];
-        $this->assertSame('HEAD', $req->getMethod());
+        $this->assertSame('GET', $req->getMethod());
     }
 
     public function testTestConnectionFailure()

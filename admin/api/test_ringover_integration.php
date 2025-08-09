@@ -40,8 +40,9 @@ try {
 
     $auth = $ringover->testConnection();
     if (!($auth['success'] ?? false)) {
-        log_line('Ringover authentication failed');
-        echo json_encode(['success' => false, 'message' => 'Ringover authentication failed']);
+        $msg = $auth['message'] ?? 'Ringover authentication failed';
+        log_line('Ringover authentication failed: ' . $msg);
+        echo json_encode(['success' => false, 'message' => $msg]);
         exit(1);
     }
     log_line('Authentication successful');

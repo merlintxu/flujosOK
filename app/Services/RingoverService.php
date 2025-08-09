@@ -8,6 +8,8 @@ use FlujosDimension\Infrastructure\Http\HttpClient;
 use Generator;
 use JsonException;
 use RuntimeException;
+use DateTimeImmutable;
+use DateTimeZone;
 
 /**
  * Servicio Ringover con paginación completa.
@@ -53,17 +55,26 @@ class RingoverService
     /**
      * Perform a lightweight request to verify API connectivity.
      *
-     * @return array{success: bool}
+     * @return array{success: bool, message?: string}
      */
     public function testConnection(): array
     {
         try {
-            $resp = $this->http->request('HEAD', "{$this->baseUrl}/calls", [
+            $since = (new DateTimeImmutable('-1 day'))->setTimezone(new DateTimeZone('UTC'));
+            $resp  = $this->http->request('GET', "{$this->baseUrl}/calls", [
                 'headers' => ['Authorization' => $this->apiKey],
+                'query'   => [
+                    'start_date' => $since->format(DATE_ATOM),
+                    'limit'      => 1,
+                ],
             ]);
-            return ['success' => $resp->getStatusCode() === 200];
-        } catch (\Throwable) {
-            return ['success' => false];
+            $code = $resp->getStatusCode();
+            if ($code >= 200 && $code < 300) {
+                return ['success' => true];
+            }
+            return ['success' => false, 'message' => "HTTP {$code}"];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 
