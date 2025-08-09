@@ -141,65 +141,39 @@ class RingoverService
     {
         $since = $since->setTimezone(new \DateTimeZone('UTC'));
 
-        $limit     = 100;
-        $offset    = 0;
-        $page      = 1;
-        $useOffset = true;
-        $prevFirst = null;
+        $limit = 100;
+        $page  = 1;
 
         while (true) {
-            $query = ['start_date' => $since->format(DATE_ATOM)];
+            $query = [
+                'start_date' => $since->format(DATE_ATOM),
+                'page'       => $page,
+                'limit'      => $limit,
+            ];
             if ($full) {
                 $query['full'] = 1;
             }
             if ($fields !== null) {
                 $query['fields'] = $fields;
             }
-            if ($useOffset) {
-                $query['limit_offset'] = $offset;
-                $query['limit_count']  = $limit;
-            } else {
-                $query['page']  = $page;
-                $query['limit'] = $limit;
-            }
 
             $body = $this->makeRequest('GET', "{$this->baseUrl}/calls", $query);
-            $data = $body['data'] ?? [];
+            $data = $body['call_list'] ?? ($body['data'] ?? []);
 
             if (empty($data)) {
-                if ($useOffset) {
-                    // Fallback to page based pagination
-                    $useOffset = false;
-                    $page      = 1;
-                    $prevFirst = null;
-                    continue;
-                }
                 break;
             }
-
-            $firstId = $data[0]['id'] ?? null;
-            if ($useOffset && $prevFirst !== null && $firstId === $prevFirst && $offset > 0) {
-                // Offset parameters ignored by API, switch to page mode
-                $useOffset = false;
-                $page      = (int)($offset / $limit) + 1;
-                $prevFirst = null;
-                continue;
-            }
-            $prevFirst = $firstId;
 
             foreach ($data as $call) {
                 yield $call;
             }
 
-            if (count($data) < $limit) {
+            $total = (int)($body['total_call_count'] ?? 0);
+            if (count($data) < $limit || ($total > 0 && $page * $limit >= $total)) {
                 break;
             }
 
-            if ($useOffset) {
-                $offset += $limit;
-            } else {
-                $page++;
-            }
+            $page++;
         }
     }
 
@@ -232,9 +206,9 @@ class RingoverService
         $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
 
         return [
-            'ringover_id'    => $call['id']            ?? null,
+            'ringover_id'    => $call['cdr_id']        ?? ($call['id']            ?? null),
             'call_id'        => $call['call_id']       ?? null,
-            'phone_number'   => $call['from_number']   ?? ($call['caller_number']   ?? null),
+            'phone_number'   => $call['from_number']   ?? ($call['caller_number']   ?? ($call['contact_number'] ?? null)),
             'contact_number' => $call['to_number']     ?? ($call['contact_number']  ?? null),
             'caller_name'    => $call['from_name']     ?? ($call['caller_name']     ?? null),
             'contact_name'   => $call['to_name']       ?? ($call['contact_name']    ?? null),
@@ -246,8 +220,8 @@ class RingoverService
             'last_state'     => $lastState,
             'status'         => $status,
             'duration'       => $duration,
-            'recording_url'  => $call['recording_url'] ?? ($call['recording']       ?? null),
-            'voicemail_url'  => $call['voicemail_url'] ?? null,
+            'recording_url'  => $call['recording_url'] ?? ($call['recording'] ?? ($call['record'] ?? null)),
+            'voicemail_url'  => $call['voicemail_url'] ?? ($call['voicemail'] ?? null),
         ];
     }
 
