@@ -51,7 +51,10 @@ if (!function_exists('writeLog')) {
 if (!function_exists('parseSince')) {
     function parseSince(string $sinceStr): \DateTimeImmutable {
         try {
-            return new \DateTimeImmutable($sinceStr);
+            // Allow HTML datetime-local ("Y-m-dTH:i") or "Y-m-d H:i"
+            $sinceStr = str_replace('T', ' ', $sinceStr);
+            $tz = new \DateTimeZone('Europe/Madrid');
+            return new \DateTimeImmutable($sinceStr, $tz);
         } catch (\Exception $e) {
             writeLog(LOG_LEVEL_ERROR, 'Invalid since parameter', [
                 'since' => $sinceStr,

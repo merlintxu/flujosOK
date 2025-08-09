@@ -482,6 +482,11 @@ $apisStatus  = apiHealth();
         </tr><?php endforeach;?></tbody></table>
 
         <!-- SINCRONIZACIONES -->
+        <div class="form-row" style="margin:10px 0;gap:10px;align-items:center;">
+            <label for="ringover_since">Sincronizar llamadas desde:</label>
+            <input type="datetime-local" id="ringover_since" value="<?=date('Y-m-d\\TH:i',strtotime('-24 hours'))?>">
+            <label><input type="checkbox" id="ringover_download" checked> Descargar grabaciones</label>
+        </div>
         <button class="btn" id="btn-sync-ringover">📥 Sync Ringover</button>
         <button class="btn" id="btn-batch-openai">🤖 Batch OpenAI</button>
         <button class="btn" id="btn-push-crm">🏢 Push Pipedrive</button>
@@ -550,7 +555,11 @@ document.getElementById('btn-make-token').onclick=async()=>{
 /* --------- Sync Ringover --------- */
 document.getElementById('btn-sync-ringover').onclick=async()=>{
   setStatus('Sincronizando Ringover…');
-  const fd=new FormData();fd.append('download',1);
+  const fd=new FormData();
+  const since=document.getElementById('ringover_since').value;
+  if(since) fd.append('since', since);
+  const dl=document.getElementById('ringover_download').checked?'1':'0';
+  fd.append('download', dl);
   const r=await post('api/sync_ringover.php',fd);
   setStatus('Insertadas '+r.inserted+' llamadas');
 };

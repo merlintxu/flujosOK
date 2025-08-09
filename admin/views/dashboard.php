@@ -412,6 +412,13 @@
             <?php else: ?>
                 <p>No hay llamadas registradas aún. Los datos se mostrarán aquí cuando se sincronicen las llamadas desde Ringover.</p>
             <?php endif; ?>
+
+            <div class="form-group" style="margin-top:20px;">
+                <label for="ringover_since">Sincronizar llamadas desde:</label>
+                <input type="datetime-local" id="ringover_since" class="form-control" value="<?= date('Y-m-d\\TH:i', strtotime('-24 hours')) ?>">
+                <label><input type="checkbox" id="ringover_download" checked> Descargar grabaciones</label>
+                <button id="syncRingover" class="btn btn-primary" style="margin-left:10px;">Sync Ringover</button>
+            </div>
         </div>
 
         <!-- Salud del Sistema -->
@@ -621,10 +628,25 @@
                 });
             }
         }
-        
+
         function testEndpoint(endpoint, method) {
             alert('Funcionalidad de test de endpoint en desarrollo.\n\nEndpoint: ' + method + ' ' + endpoint);
         }
+
+        // Sync Ringover handler
+        document.getElementById('syncRingover').addEventListener('click', function() {
+            const since = document.getElementById('ringover_since').value;
+            const download = document.getElementById('ringover_download').checked ? '1' : '0';
+            const fd = new FormData();
+            if (since) fd.append('since', since);
+            fd.append('download', download);
+            fetch('api/sync_ringover.php', {method: 'POST', body: fd})
+                .then(r => r.json())
+                .then(data => {
+                    alert('Sincronización completa: ' + data.inserted + ' llamadas insertadas');
+                })
+                .catch(err => alert('Error en sincronización: ' + err));
+        });
     </script>
 </body>
 </html>
