@@ -94,6 +94,7 @@ $sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
 $since = parseSince($sinceStr);
 $inserted = 0;
 $downloads = 0;
+$errors = [];
 
 try {
     if ($full || $fields !== null) {
@@ -146,6 +147,11 @@ try {
                 $downloads++;
             } catch (\Throwable $e) {
                 writeLog(LOG_LEVEL_ERROR, 'Recording download failed', ['error' => $e->getMessage()]);
+                $errors[] = [
+                    'type'    => 'download',
+                    'call_id' => $ringId,
+                    'message' => $e->getMessage(),
+                ];
                 if ($callId !== null && method_exists($repo, 'setPendingRecordings')) {
                     $repo->setPendingRecordings($callId, true);
                 }
@@ -161,10 +167,15 @@ try {
     }
 
     writeLog(LOG_LEVEL_DEBUG, 'Total calls retrieved from Ringover API', ['count' => $retrieved]);
-    writeLog(LOG_LEVEL_INFO, 'Sync completed', ['retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads]);
-    echo json_encode(['success'=>true,'retrieved'=>$retrieved,'inserted'=>$inserted,'downloads'=>$downloads]);
+    writeLog(LOG_LEVEL_INFO, 'Sync completed', ['retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads, 'errors' => count($errors)]);
+    $response = ['success' => empty($errors), 'retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads];
+    if (!empty($errors)) {
+        $response['errors'] = $errors;
+    }
+    echo json_encode($response);
 } catch (Throwable $e) {
     writeLog(LOG_LEVEL_ERROR, 'Exception occurred', ['error' => $e->getMessage()]);
+    $errors[] = ['type' => 'exception', 'message' => $e->getMessage()];
     http_response_code(500);
-    echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => $e->getMessage(), 'errors' => $errors]);
 }
