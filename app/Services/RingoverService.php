@@ -14,23 +14,39 @@ use RuntimeException;
  */
 class RingoverService
 {
-    private HttpClient $http;
-    private Config     $config;
-    private string     $apiKey;
-    private string     $baseUrl;
-    private int        $maxSize;
-    private float      $lastRequestAt = 0.0;
+    private HttpClient  $http;
+    /**
+     * Configuration instance or array of raw values.
+     * Accepting both types keeps backward compatibility with older
+     * code that passed an array instead of the Config object.
+     *
+     * @var Config|array
+     */
+    private $config;
+    private string $apiKey;
+    private string $baseUrl;
+    private int    $maxSize;
+    private float  $lastRequestAt = 0.0;
 
     /**
      * Prepare HTTP client and configuration values.
      */
-    public function __construct(HttpClient $http, Config $config)
+    public function __construct(HttpClient $http, Config|array $config)
     {
-        $this->http    = $http;
-        $this->config  = $config;
-        $this->apiKey  = $config->get('RINGOVER_API_KEY', '');
-        $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
-        $limitMb       = (int)$config->get('RINGOVER_MAX_RECORDING_MB', 100);
+        $this->http   = $http;
+        $this->config = $config;
+
+        if ($config instanceof Config) {
+            $this->apiKey  = $config->get('RINGOVER_API_KEY', '');
+            $this->baseUrl = $config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2');
+            $limitMb       = (int)$config->get('RINGOVER_MAX_RECORDING_MB', 100);
+        } else {
+            // allow using a plain associative array for configuration
+            $this->apiKey  = $config['RINGOVER_API_KEY'] ?? '';
+            $this->baseUrl = $config['RINGOVER_API_URL'] ?? 'https://public-api.ringover.com/v2';
+            $limitMb       = (int)($config['RINGOVER_MAX_RECORDING_MB'] ?? 100);
+        }
+
         $this->maxSize = $limitMb * 1024 * 1024;
     }
 
