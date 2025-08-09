@@ -64,6 +64,10 @@ final class CallRepository
      */
     public function insertOrIgnore(array $call): int
     {
+        if (empty($call['ringover_id'])) {
+            return 0;
+        }
+
         $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
         $prefix = $driver === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
 

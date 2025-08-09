@@ -23,13 +23,21 @@ class RingoverServiceTest extends TestCase
         return $config;
     }
 
-    public function testGetCallsPaginationOffset()
+    public function testGetCallsPaginationByPage()
     {
-        $page1 = ['data' => array_map(fn($i) => ['id' => $i], range(1, 100))];
-        $page2 = ['data' => [['id' => 101]]];
+        $page1 = [
+            'call_list' => array_map(fn($i) => ['cdr_id' => $i], range(1, 100)),
+            'call_list_count' => 100,
+            'total_call_count' => 101,
+        ];
+        $page2 = [
+            'call_list' => [['cdr_id' => 101]],
+            'call_list_count' => 1,
+            'total_call_count' => 101,
+        ];
         $mock = new MockHandler([
             new Response(200, [], json_encode($page1)),
-            new Response(200, [], json_encode($page2))
+            new Response(200, [], json_encode($page2)),
         ]);
         $history = [];
         $stack = HandlerStack::create($mock);
@@ -41,52 +49,18 @@ class RingoverServiceTest extends TestCase
         $this->assertCount(101, $calls);
         $this->assertCount(2, $history);
 
-        $first = $history[0]['request'];
-        parse_str($first->getUri()->getQuery(), $params1);
-        $this->assertSame('0', $params1['limit_offset']);
-        $this->assertSame('100', $params1['limit_count']);
-        $this->assertArrayHasKey('start_date', $params1);
-
-        $second = $history[1]['request'];
-        parse_str($second->getUri()->getQuery(), $params2);
-        $this->assertSame('100', $params2['limit_offset']);
-    }
-
-    public function testGetCallsPaginationFallbackToPage()
-    {
-        $page1 = ['data' => array_map(fn($i) => ['id' => $i], range(1, 100))];
-        $dup   = $page1; // API ignoring offset returns same data
-        $page2 = ['data' => [['id' => 101]]];
-        $mock = new MockHandler([
-            new Response(200, [], json_encode($page1)),
-            new Response(200, [], json_encode($dup)),
-            new Response(200, [], json_encode($page2))
-        ]);
-        $history = [];
-        $stack = HandlerStack::create($mock);
-        $stack->push(Middleware::history($history));
-        $http = new HttpClient(['handler' => $stack]);
-        $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
-        $calls = iterator_to_array($service->getCalls(new DateTimeImmutable('2024-01-01T00:00:00Z')));
-        $this->assertCount(101, $calls);
-        $this->assertCount(3, $history);
-
         parse_str($history[0]['request']->getUri()->getQuery(), $p1);
-        $this->assertSame('0', $p1['limit_offset']);
+        $this->assertSame('1', $p1['page']);
+        $this->assertSame('100', $p1['limit']);
 
         parse_str($history[1]['request']->getUri()->getQuery(), $p2);
-        $this->assertSame('100', $p2['limit_offset']);
-
-        parse_str($history[2]['request']->getUri()->getQuery(), $p3);
-        $this->assertSame('2', $p3['page']);
+        $this->assertSame('2', $p2['page']);
     }
 
     public function testGetCallsConvertsSinceToUtc()
     {
         $mock = new MockHandler([
-            new Response(200, [], json_encode(['data' => []])),
-            new Response(200, [], json_encode(['data' => []]))
+            new Response(200, [], json_encode(['call_list' => [], 'total_call_count' => 0, 'call_list_count' => 0]))
         ]);
         $history = [];
         $stack = HandlerStack::create($mock);
@@ -110,13 +84,13 @@ class RingoverServiceTest extends TestCase
         $service = new RingoverService($http, $config);
 
         $call1 = [
-            'id'             => 'abc',
+            'cdr_id'         => 'abc',
             'from_number'    => '123',
             'direction'      => 'out',
             'last_state'     => 'busy',
             'incall_duration'=> 7,
             'recording_url'  => 'https://r.test/a.wav',
-            'start_time'     => '2024-01-01T00:00:00Z'
+            'call_start'     => '2024-01-01T00:00:00Z'
         ];
 
         $mapped1 = $service->mapCallFields($call1);
@@ -141,13 +115,13 @@ class RingoverServiceTest extends TestCase
         ], $mapped1);
 
         $call2 = [
-            'id'             => 'def',
-            'to_number'      => '456',
+            'cdr_id'         => 'def',
+            'contact_number' => '456',
             'direction'      => 'in',
             'is_answered'    => true,
             'total_duration' => 10,
             'recording'      => 'https://r.test/b.wav',
-            'started_at'     => '2024-02-01T00:00:00Z'
+            'call_start'     => '2024-02-01T00:00:00Z'
         ];
 
         $mapped2 = $service->mapCallFields($call2);
@@ -172,8 +146,8 @@ class RingoverServiceTest extends TestCase
         ], $mapped2);
 
         $call3 = [
-            'id'          => 'ghi',
-            'to_number'   => '789',
+            'cdr_id'       => 'ghi',
+            'contact_number' => '789',
             'direction'   => 'in',
             'is_answered' => false,
             'total_duration' => 0
