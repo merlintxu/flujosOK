@@ -191,5 +191,12 @@ try {
     writeLog(LOG_LEVEL_ERROR, 'Exception occurred', ['error' => $e->getMessage()]);
     $errors[] = ['type' => 'exception', 'message' => $e->getMessage()];
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage(), 'errors' => $errors]);
+    echo json_encode([
+        'success'   => false,
+        'message'   => $e->getMessage(),
+        'retrieved' => $retrieved ?? 0,
+        'inserted'  => $inserted ?? 0,
+        'downloads' => $downloads ?? 0,
+        'errors'    => $errors,
+    ]);
 }

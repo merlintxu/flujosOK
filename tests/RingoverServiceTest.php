@@ -89,7 +89,7 @@ class RingoverServiceTest extends TestCase
             'direction'      => 'out',
             'last_state'     => 'busy',
             'incall_duration'=> 7,
-            'recording_url'  => 'https://r.test/a.wav',
+            'record'         => 'https://r.test/a.wav',
             'call_start'     => '2024-01-01T00:00:00Z'
         ];
 
@@ -120,7 +120,7 @@ class RingoverServiceTest extends TestCase
             'direction'      => 'in',
             'is_answered'    => true,
             'total_duration' => 10,
-            'recording'      => 'https://r.test/b.wav',
+            'record'         => 'https://r.test/b.wav',
             'call_start'     => '2024-02-01T00:00:00Z'
         ];
 
