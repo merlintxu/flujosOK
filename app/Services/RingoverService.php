@@ -141,65 +141,50 @@ class RingoverService
     {
         $since = $since->setTimezone(new \DateTimeZone('UTC'));
 
-        $limit     = 100;
-        $offset    = 0;
-        $page      = 1;
-        $useOffset = true;
-        $prevFirst = null;
+        $limit   = 100;
+        $page    = 1;
+        $total   = null;
+        $processed = 0;
 
         while (true) {
-            $query = ['start_date' => $since->format(DATE_ATOM)];
+            $query = [
+                'start_date' => $since->format(DATE_ATOM),
+                'page'       => $page,
+                'limit'      => $limit,
+            ];
             if ($full) {
                 $query['full'] = 1;
             }
             if ($fields !== null) {
                 $query['fields'] = $fields;
             }
-            if ($useOffset) {
-                $query['limit_offset'] = $offset;
-                $query['limit_count']  = $limit;
-            } else {
-                $query['page']  = $page;
-                $query['limit'] = $limit;
-            }
 
             $body = $this->makeRequest('GET', "{$this->baseUrl}/calls", $query);
-            $data = $body['data'] ?? [];
+            $data = $body['call_list'] ?? $body['data'] ?? [];
 
             if (empty($data)) {
-                if ($useOffset) {
-                    // Fallback to page based pagination
-                    $useOffset = false;
-                    $page      = 1;
-                    $prevFirst = null;
-                    continue;
-                }
+                error_log('RingoverService: empty call_list response');
                 break;
             }
 
-            $firstId = $data[0]['id'] ?? null;
-            if ($useOffset && $prevFirst !== null && $firstId === $prevFirst && $offset > 0) {
-                // Offset parameters ignored by API, switch to page mode
-                $useOffset = false;
-                $page      = (int)($offset / $limit) + 1;
-                $prevFirst = null;
-                continue;
-            }
-            $prevFirst = $firstId;
+            $total      = $body['total_call_count'] ?? $total;
+            $pageCount  = $body['call_list_count'] ?? count($data);
 
             foreach ($data as $call) {
+                $call['_page'] = $page;
                 yield $call;
             }
 
-            if (count($data) < $limit) {
+            $processed += $pageCount;
+            if ($total !== null && $processed >= $total) {
                 break;
             }
 
-            if ($useOffset) {
-                $offset += $limit;
-            } else {
-                $page++;
+            if ($pageCount < $limit) {
+                break;
             }
+
+            $page++;
         }
     }
 
@@ -232,14 +217,14 @@ class RingoverService
         $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
 
         return [
-            'ringover_id'    => $call['id']            ?? null,
+            'ringover_id'    => $call['cdr_id']        ?? null,
             'call_id'        => $call['call_id']       ?? null,
-            'phone_number'   => $call['from_number']   ?? ($call['caller_number']   ?? null),
-            'contact_number' => $call['to_number']     ?? ($call['contact_number']  ?? null),
+            'phone_number'   => $call['from_number']   ?? null,
+            'contact_number' => $call['contact_number']?? null,
             'caller_name'    => $call['from_name']     ?? ($call['caller_name']     ?? null),
             'contact_name'   => $call['to_name']       ?? ($call['contact_name']    ?? null),
             'direction'      => $direction,
-            'start_time'     => $call['start_time']    ?? ($call['started_at']      ?? null),
+            'start_time'     => $call['call_start']    ?? ($call['start_time']      ?? ($call['started_at'] ?? null)),
             'total_duration' => $call['total_duration']?? null,
             'incall_duration'=> $call['incall_duration'] ?? null,
             'is_answered'    => $answered,

@@ -105,15 +105,29 @@ try {
     $retrieved = 0;
     $loggedApiCall = false;
 
+    $currentPage = 0;
     foreach ($calls as $call) {
         if (!$loggedApiCall) {
             writeLog(LOG_LEVEL_INFO, 'Calling Ringover API', ['since' => $since->format(\DateTimeInterface::ATOM)]);
             $loggedApiCall = true;
         }
 
+        $page = $call['_page'] ?? 0;
+        unset($call['_page']);
+        if ($page !== $currentPage) {
+            $currentPage = $page;
+            writeLog(LOG_LEVEL_INFO, 'Processing page', ['page' => $currentPage]);
+        }
+
         $retrieved++;
         writeLog(LOG_LEVEL_DEBUG, 'Processing call', $call);
         $mapped = $ringoverService->mapCallFields($call);
+
+        if (empty($mapped['ringover_id'])) {
+            writeLog(LOG_LEVEL_ERROR, 'Skipping call without ringover_id', $call);
+            continue;
+        }
+
         $result = $repo->insertOrIgnore($mapped);
 
         $ringId = (string)($mapped['ringover_id'] ?? '');
