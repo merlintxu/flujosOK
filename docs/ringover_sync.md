@@ -30,6 +30,8 @@ Se utilizan parámetros `page` y `limit`. El servicio incrementa `page` hasta pr
 - `from_number` → `phone_number`
 - `contact_number` → `contact_number`
 - `call_start` → `start_time`
+- `record` → `recording_url`
+- `voicemail` → `voicemail_url`
 
 ## Validaciones adicionales
 
@@ -38,6 +40,6 @@ Se utilizan parámetros `page` y `limit`. El servicio incrementa `page` hasta pr
 
 ## Despliegue
 
-1. Ejecutar las migraciones para asegurar índice único en `ringover_id`.
+1. Ejecutar las migraciones para asegurar índice único en `ringover_id` y la columna `voicemail_url`.
 2. Ejecutar `phpunit` para validar los cambios.
 3. Configurar los flujos de n8n con parámetros `page` y `limit`.

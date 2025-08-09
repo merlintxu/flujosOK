@@ -176,6 +176,8 @@ class RingoverService
             }
 
             $processed += $pageCount;
+            // debug log of page processing
+            error_log("RingoverService: processed page {$page} with {$pageCount} calls");
             if ($total !== null && $processed >= $total) {
                 break;
             }
@@ -231,8 +233,8 @@ class RingoverService
             'last_state'     => $lastState,
             'status'         => $status,
             'duration'       => $duration,
-            'recording_url'  => $call['recording_url'] ?? ($call['recording']       ?? null),
-            'voicemail_url'  => $call['voicemail_url'] ?? null,
+            'recording_url'  => $call['record']       ?? null,
+            'voicemail_url'  => $call['voicemail']    ?? null,
         ];
     }
 
