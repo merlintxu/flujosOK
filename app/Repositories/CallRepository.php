@@ -14,6 +14,8 @@ final class CallRepository
     {
         $sql = 'SELECT * FROM calls
                 WHERE pending_analysis = 1
+                  AND has_recording = 1
+                  AND (recording_path IS NOT NULL AND recording_path <> \'\')
                 ORDER BY created_at ASC
                 LIMIT :max';
 
@@ -116,6 +118,15 @@ final class CallRepository
         $stmt->execute([':rid' => $ringoverId]);
         $id = $stmt->fetchColumn();
         return $id === false ? null : (int)$id;
+    }
+
+    /**
+     * Mark whether a call is pending AI analysis.
+     */
+    public function setPendingAnalysis(int $callId, bool $pending): void
+    {
+        $stmt = $this->db->prepare('UPDATE calls SET pending_analysis = :p WHERE id = :id');
+        $stmt->execute([':p' => $pending ? 1 : 0, ':id' => $callId]);
     }
 
     /**
