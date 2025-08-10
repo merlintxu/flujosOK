@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace FlujosDimension\Services;
 
 use FlujosDimension\Repositories\CallRepository;
+use FlujosDimension\Core\Logger;
 
 /**
  * Handles AI-based analysis of call records.
@@ -17,7 +18,8 @@ final class AnalyticsService
      */
     public function __construct(
         private readonly CallRepository $repo,
-        private readonly OpenAIService  $openai
+        private readonly OpenAIService  $openai,
+        private readonly Logger $logger
     ) {}
 
     /**
@@ -32,11 +34,27 @@ final class AnalyticsService
         }
 
         $messages = array_map(
-            static fn(array $c) => [
-                'role'    => 'user',
-                'content' => "Analiza la llamada disponible en {$c['recording_url']}.
-                               Devuelve resumen, sentimiento y 5 keywords.",
-            ],
+            function (array $c): array {
+                $source = $c['recording_url'] ?? '';
+                $path   = $c['recording_path'] ?? '';
+
+                if ($path !== '') {
+                    if (is_file($path)) {
+                        $source = $path;
+                    } else {
+                        $this->logger->warning('recording_path_not_found', [
+                            'path'    => $path,
+                            'call_id' => $c['id'] ?? null,
+                        ]);
+                    }
+                }
+
+                return [
+                    'role'    => 'user',
+                    'content' => "Analiza la llamada disponible en {$source}." .
+                                 " Devuelve resumen, sentimiento y 5 keywords.",
+                ];
+            },
             $pending
         );
 

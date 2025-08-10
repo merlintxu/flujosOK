@@ -179,7 +179,8 @@ private function registerServices(): void
         \FlujosDimension\Services\AnalyticsService::class,            // <- ruta exacta: app\Services\AnalyticsService.php
         fn ($c) => new \FlujosDimension\Services\AnalyticsService(
             $c->resolve('callRepository'),
-            $c->resolve(\FlujosDimension\Services\OpenAIService::class)
+            $c->resolve(\FlujosDimension\Services\OpenAIService::class),
+            $c->resolve('logger')
         )
     );
     $this->container->alias(

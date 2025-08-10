@@ -15,7 +15,7 @@ final class CallRepository
         $sql = 'SELECT * FROM calls
                 WHERE pending_analysis = 1
                   AND has_recording = 1
-                  AND (recording_path IS NOT NULL AND recording_path <> \'\')
+                  AND COALESCE(recording_path, "") <> ""
                 ORDER BY created_at ASC
                 LIMIT :max';
 
