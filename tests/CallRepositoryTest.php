@@ -131,6 +131,63 @@ class CallRepositoryTest extends TestCase
         $this->assertSame(1, (int)$value);
     }
 
+    public function testMarkingCallMakesItAppearInPending(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pending_analysis INTEGER DEFAULT 0,
+            has_recording INTEGER DEFAULT 1,
+            recording_path TEXT,
+            created_at TEXT
+        );");
+        $pdo->exec("INSERT INTO calls (id, pending_analysis, has_recording, recording_path, created_at)
+            VALUES (1,0,1,'/tmp/a.mp3','2024-01-01 00:00:00')");
+
+        $repo = $this->repo($pdo);
+        $repo->setPendingAnalysis(1, true);
+
+        $pending = $repo->pending();
+        $this->assertCount(1, $pending);
+        $this->assertSame(1, (int)$pending[0]['id']);
+    }
+
+    public function testInsertOrIgnorePersistsVoicemailUrl(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ringover_id TEXT UNIQUE,
+            call_id TEXT,
+            phone_number TEXT,
+            contact_number TEXT,
+            caller_name TEXT,
+            contact_name TEXT,
+            direction TEXT,
+            status TEXT,
+            duration INTEGER,
+            recording_url TEXT,
+            voicemail_url TEXT,
+            start_time TEXT,
+            total_duration INTEGER,
+            incall_duration INTEGER,
+            created_at TEXT,
+            recording_path TEXT,
+            has_recording INTEGER DEFAULT 0
+        );");
+
+        $repo = $this->repo($pdo);
+        $repo->insertOrIgnore([
+            'ringover_id'   => 'r1',
+            'voicemail_url' => 'http://vm.test/a.mp3'
+        ]);
+
+        $url = $pdo->query("SELECT voicemail_url FROM calls WHERE ringover_id='r1'")->fetchColumn();
+        $this->assertSame('http://vm.test/a.mp3', $url);
+    }
+
     public function testPendingReturnsOnlyCallsWithRecording(): void
     {
         $pdo = new PDO('sqlite::memory:');

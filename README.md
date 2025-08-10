@@ -20,6 +20,7 @@ cp .env.example .env
 # along with your API credentials. The variable
 # `RINGOVER_MAX_RECORDING_MB` limits the size of downloaded
 # recordings (default 100).
+mkdir -p storage/recordings storage/voicemails
 php -S localhost:8000 -t public
 ```
 
