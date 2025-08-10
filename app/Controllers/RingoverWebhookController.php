@@ -32,7 +32,9 @@ class RingoverWebhookController extends BaseController
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
-            $info = $ringover->downloadRecording($data['recording_url'], 'recordings');
+            $storageDir   = dirname(__DIR__, 2) . '/storage';
+            $recordingsDir = $storageDir . '/recordings';
+            $info = $ringover->downloadRecording($data['recording_url'], $recordingsDir);
 
             /** @var CallRepository $repo */
             $repo = $this->service(CallRepository::class);
@@ -80,7 +82,9 @@ class RingoverWebhookController extends BaseController
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
-            $info = $ringover->downloadVoicemail($data['voicemail_url']);
+            $storageDir    = dirname(__DIR__, 2) . '/storage';
+            $voicemailsDir = $storageDir . '/voicemails';
+            $info = $ringover->downloadVoicemail($data['voicemail_url'], $voicemailsDir);
 
             /** @var CallRepository $repo */
             $repo = $this->service(CallRepository::class);
