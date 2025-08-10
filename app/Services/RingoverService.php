@@ -349,9 +349,9 @@ class RingoverService
         ];
     }
 
-    public function downloadVoicemail(string $url): array
+    public function downloadVoicemail(string $url, string $dir = 'voicemails'): array
     {
-        return $this->downloadRecording($url, 'voicemails');
+        return $this->downloadRecording($url, $dir);
     }
 }
 

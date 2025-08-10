@@ -24,6 +24,9 @@ try {
     /** @var CallRepository $repo */
     $repo     = $container->resolve('callRepository');
 
+    $baseStorage   = dirname(__DIR__, 2) . '/storage';
+    $recordingsDir = $baseStorage . '/recordings';
+
     $params = validate_input($request, [
         'start_date' => ['filter' => FILTER_UNSAFE_RAW, 'required' => true],
     ]);
@@ -72,7 +75,7 @@ try {
     }
 
     try {
-        $info = $ringover->downloadRecording($mapped['recording_url'], 'recordings');
+        $info = $ringover->downloadRecording($mapped['recording_url'], $recordingsDir);
         log_line('Recording downloaded to ' . $info['path']);
     } catch (Throwable $e) {
         log_line('Recording download failed: ' . $e->getMessage());

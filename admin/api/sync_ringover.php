@@ -19,6 +19,16 @@ if (!is_dir($logDir)) {
 }
 $GLOBALS['logFile'] = $logDir . '/sync_ringover.log';
 
+// Base storage directories
+$baseStorage   = dirname(__DIR__, 2) . '/storage';
+$recordingsDir = $baseStorage . '/recordings';
+$voicemailsDir = $baseStorage . '/voicemails';
+foreach ([$recordingsDir, $voicemailsDir] as $dir) {
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+}
+
 if (!function_exists('determine_log_level')) {
     function determine_log_level(Request $request): int {
         $value = $request->get('log_level') ?? $request->post('log_level') ?? getenv('RINGOVER_LOG_LEVEL');
@@ -142,10 +152,10 @@ try {
             try {
                 if (!empty($mapped['recording_url']) && method_exists($ringoverService, 'downloadRecording')) {
                     writeLog(LOG_LEVEL_INFO, 'Downloading recording', ['url' => $mapped['recording_url']]);
-                    $info = $ringoverService->downloadRecording($mapped['recording_url'], 'recordings');
-                } elseif (!empty($mapped['voicemail_url']) && method_exists($ringoverService, 'downloadVoicemail')) {
+                    $info = $ringoverService->downloadRecording($mapped['recording_url'], $recordingsDir);
+                } elseif (!empty($mapped['voicemail_url']) && method_exists($ringoverService, 'downloadRecording')) {
                     writeLog(LOG_LEVEL_INFO, 'Downloading voicemail', ['url' => $mapped['voicemail_url']]);
-                    $info = $ringoverService->downloadVoicemail($mapped['voicemail_url']);
+                    $info = $ringoverService->downloadRecording($mapped['voicemail_url'], $voicemailsDir);
                 } else {
                     $info = null;
                 }
