@@ -173,6 +173,24 @@ class RingoverServiceTest extends TestCase
         rmdir($dir);
     }
 
+    public function testDownloadRecordingWithAbsolutePath(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Length' => 3]),
+            new Response(200, [], 'foo')
+        ]);
+        $stack = HandlerStack::create($mock);
+        $http = new HttpClient(['handler' => $stack]);
+        $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
+        $service = new RingoverService($http, $config);
+        $dir = sys_get_temp_dir() . '/ringabs';
+        $info = $service->downloadRecording('https://files.test/abs.mp3', $dir);
+        $this->assertStringStartsWith($dir, $info['path']);
+        $this->assertFileExists($info['path']);
+        unlink($info['path']);
+        rmdir($dir);
+    }
+
     public function testDownloadRecordingUsesRedirectedFilename()
     {
         $mock = new MockHandler([
