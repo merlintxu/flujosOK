@@ -208,12 +208,13 @@ class RingoverService
         $lastState  = $call['last_state'] ?? null;
         $answered   = $call['is_answered'] ?? null;
         $status     = null;
-        if ($lastState !== null || $answered !== null) {
+        if ($lastState !== null) {
             if (in_array($lastState, ['busy', 'failed'], true)) {
                 $status = $lastState;
-            } else {
-                $status = (bool)$answered ? 'answered' : 'missed';
             }
+        }
+        if ($status === null && $answered !== null) {
+            $status = $answered ? 'answered' : 'missed';
         }
 
         $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
@@ -229,8 +230,6 @@ class RingoverService
             'start_time'     => $call['call_start']    ?? ($call['start_time']      ?? ($call['started_at'] ?? null)),
             'total_duration' => $call['total_duration']?? null,
             'incall_duration'=> $call['incall_duration'] ?? null,
-            'is_answered'    => $answered,
-            'last_state'     => $lastState,
             'status'         => $status,
             'duration'       => $duration,
             'recording_url'  => $call['record']       ?? null,

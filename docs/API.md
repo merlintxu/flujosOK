@@ -32,6 +32,7 @@ List calls. Parameters: `limit`, `offset`, `date`.
 
 ### `POST /api/calls`
 Create a new call record. Fields: `phone_number`, `direction`, `status`, `duration`.
+`status` accepts `pending`, `completed`, `answered`, `missed`, `busy`, or `failed`.
 
 ### `POST /api/sync/hourly`
 Trigger hourly synchronization from Ringover.

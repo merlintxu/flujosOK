@@ -304,7 +304,7 @@ class Database
                     ringover_id VARCHAR(255) UNIQUE,
                     phone_number VARCHAR(50),
                     direction ENUM('inbound', 'outbound') DEFAULT 'inbound',
-                    status ENUM('answered', 'missed', 'busy', 'failed') DEFAULT 'missed',
+                    status ENUM('pending', 'completed', 'answered', 'missed', 'busy', 'failed') DEFAULT 'pending',
                     duration INT DEFAULT 0,
                     recording_url TEXT,
                     ai_transcription TEXT,
