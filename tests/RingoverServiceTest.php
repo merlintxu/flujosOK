@@ -106,8 +106,6 @@ class RingoverServiceTest extends TestCase
             'start_time'     => '2024-01-01T00:00:00Z',
             'total_duration' => null,
             'incall_duration'=> 7,
-            'is_answered'    => null,
-            'last_state'     => 'busy',
             'status'         => 'busy',
             'duration'       => 7,
             'recording_url'  => 'https://r.test/a.wav',
@@ -137,8 +135,6 @@ class RingoverServiceTest extends TestCase
             'start_time'     => '2024-02-01T00:00:00Z',
             'total_duration' => 10,
             'incall_duration'=> null,
-            'is_answered'    => true,
-            'last_state'     => null,
             'status'         => 'answered',
             'duration'       => 10,
             'recording_url'  => 'https://r.test/b.wav',
@@ -154,7 +150,7 @@ class RingoverServiceTest extends TestCase
         ];
 
         $mapped3 = $service->mapCallFields($call3);
-        $this->assertFalse($mapped3['is_answered']);
+        $this->assertSame('missed', $mapped3['status']);
     }
 
     public function testDownloadRecording()

@@ -77,12 +77,12 @@ final class CallRepository
                     ringover_id, call_id, phone_number, contact_number,
                     caller_name, contact_name, direction, status, duration,
                     recording_url, voicemail_url, start_time, total_duration,
-                    incall_duration, last_state, is_answered, created_at
+                    incall_duration, created_at
                 ) VALUES (
                     :ringover_id, :call_id, :phone_number, :contact_number,
                     :caller_name, :contact_name, :direction, :status, :duration,
                     :recording_url, :voicemail_url, :start_time, :total_duration,
-                    :incall_duration, :last_state, :is_answered, :created_at
+                    :incall_duration, :created_at
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -101,8 +101,6 @@ final class CallRepository
             ':start_time'    => $call['start_time']     ?? null,
             ':total_duration'=> $call['total_duration'] ?? null,
             ':incall_duration'=> $call['incall_duration'] ?? null,
-            ':last_state'    => $call['last_state']     ?? null,
-            ':is_answered'   => isset($call['is_answered']) ? (int)$call['is_answered'] : null,
             ':created_at'    => $call['start_time']     ?? date('Y-m-d H:i:s'),
         ]);
 

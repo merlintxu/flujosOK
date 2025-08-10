@@ -32,8 +32,6 @@ class CallRepositoryTest extends TestCase
             start_time TEXT,
             total_duration INTEGER,
             incall_duration INTEGER,
-            last_state TEXT,
-            is_answered INTEGER,
             created_at TEXT,
             recording_path TEXT,
             has_recording INTEGER DEFAULT 0
@@ -55,8 +53,6 @@ class CallRepositoryTest extends TestCase
             'start_time'     => '2024-01-01 00:00:00',
             'total_duration' => 10,
             'incall_duration'=> 8,
-            'last_state'     => 'completed',
-            'is_answered'    => true,
         ];
 
         $inserted = $repo->insertOrIgnore($data);
@@ -74,8 +70,6 @@ class CallRepositoryTest extends TestCase
         $this->assertSame('2024-01-01 00:00:00', $row['start_time']);
         $this->assertSame(10, (int)$row['total_duration']);
         $this->assertSame(8, (int)$row['incall_duration']);
-        $this->assertSame('completed', $row['last_state']);
-        $this->assertSame(1, (int)$row['is_answered']);
     }
 
     public function testAddRecordingInsertsAndUpdates(): void
