@@ -61,7 +61,7 @@ class DashboardControllerTest extends TestCase
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
         $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
-        $analytics = new AnalyticsService($repo, $openai);
+        $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $container->instance('analyticsService', $analytics);
         $container->instance('ringoverService', new DummyRingover());
         $_GET = [];
@@ -88,7 +88,7 @@ class DashboardControllerTest extends TestCase
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
         $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
-        $analytics = new AnalyticsService($repo, $openai);
+        $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $cacheDir = sys_get_temp_dir() . '/fd-cache';
         if (!is_dir($cacheDir)) { mkdir($cacheDir); }
         file_put_contents($cacheDir . '/test.cache', 'x');
@@ -124,7 +124,7 @@ class DashboardControllerTest extends TestCase
 
         $repo = new CallRepository($pdo);
         $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
-        $analytics = new AnalyticsService($repo, $openai);
+        $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $container->instance('analyticsService', $analytics);
         $container->instance('ringoverService', new DummyRingover());
 
