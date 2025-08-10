@@ -119,4 +119,46 @@ class CallRepositoryTest extends TestCase
         $this->assertSame(7, (int)$rec['duration']);
         $this->assertSame('mp3', $rec['format']);
     }
+
+    public function testSetPendingAnalysisMarksCall(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pending_analysis INTEGER DEFAULT 0
+        );");
+        $pdo->exec("INSERT INTO calls (id, pending_analysis) VALUES (1, 0)");
+
+        $repo = $this->repo($pdo);
+        $repo->setPendingAnalysis(1, true);
+
+        $value = $pdo->query('SELECT pending_analysis FROM calls WHERE id=1')->fetchColumn();
+        $this->assertSame(1, (int)$value);
+    }
+
+    public function testPendingReturnsOnlyCallsWithRecording(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pending_analysis INTEGER DEFAULT 0,
+            has_recording INTEGER DEFAULT 0,
+            recording_path TEXT,
+            created_at TEXT
+        );");
+        $pdo->exec("INSERT INTO calls (id,pending_analysis,has_recording,recording_path,created_at) VALUES
+            (1,1,1,'/tmp/a.mp3','2024-01-01 00:00:00'),
+            (2,1,0,'/tmp/b.mp3','2024-01-02 00:00:00'),
+            (3,1,1,'','2024-01-03 00:00:00'),
+            (4,0,1,'/tmp/d.mp3','2024-01-04 00:00:00')
+        ");
+
+        $repo = $this->repo($pdo);
+        $pending = $repo->pending();
+
+        $this->assertCount(1, $pending);
+        $this->assertSame(1, (int)$pending[0]['id']);
+    }
 }

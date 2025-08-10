@@ -148,6 +148,10 @@ try {
 
         $hasMedia = !empty($mapped['recording_url']) || !empty($mapped['voicemail_url']);
 
+        if ($hasMedia && $callId !== null && method_exists($repo, 'setPendingAnalysis')) {
+            $repo->setPendingAnalysis($callId, true);
+        }
+
         if ($full && $hasMedia && $callId !== null) {
             try {
                 if (!empty($mapped['recording_url']) && method_exists($ringoverService, 'downloadRecording')) {
