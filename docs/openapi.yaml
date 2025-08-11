@@ -1,0 +1,363 @@
+openapi: 3.1.0
+info:
+  title: Flujos Dimension API
+  version: "1.0.0"
+  description: API for Ringover synchronization and CRM integration.
+servers:
+  - url: https://example.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    Error:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Error message
+    CallMetadata:
+      type: object
+      required: [phone_number, direction, status]
+      properties:
+        phone_number:
+          type: string
+          example: "+15551234567"
+        direction:
+          type: string
+          example: inbound
+        status:
+          type: string
+          example: completed
+        duration:
+          type: integer
+          nullable: true
+          example: 120
+    AudioJob:
+      type: object
+      required: [call_id, url, duration]
+      properties:
+        call_id:
+          type: string
+          example: "123"
+        url:
+          type: string
+          format: uri
+          example: "https://example.com/recording.mp3"
+        duration:
+          type: integer
+          example: 300
+    NLPInsights:
+      type: object
+      required: [call_id, keywords]
+      properties:
+        call_id:
+          type: integer
+          example: 123
+        summary:
+          type: string
+          nullable: true
+          example: Call summary
+        sentiment:
+          type: string
+          nullable: true
+          example: positive
+        keywords:
+          type: array
+          items:
+            type: string
+          example: ["sales", "support"]
+    PipedriveUpdate:
+      type: object
+      required: [call_id]
+      properties:
+        call_id:
+          type: integer
+          example: 123
+        deal_id:
+          type: integer
+          nullable: true
+          example: 456
+        contact_id:
+          type: integer
+          nullable: true
+          example: 789
+    Transcription:
+      type: object
+      required: [call_id, text]
+      properties:
+        call_id:
+          type: integer
+          example: 123
+        text:
+          type: string
+          example: Transcribed text
+        confidence:
+          type: number
+          format: float
+          nullable: true
+          example: 0.92
+    N8nSummary:
+      type: object
+      required: [call_id, summary, metadata, insights, recordings]
+      properties:
+        call_id:
+          type: integer
+          example: 123
+        summary:
+          type: string
+          example: Summary of the call
+        metadata:
+          $ref: '#/components/schemas/CallMetadata'
+        insights:
+          type: object
+          properties:
+            sentiment:
+              type: string
+              nullable: true
+              example: positive
+            keywords:
+              type: array
+              items:
+                type: string
+              example: ["sales", "support"]
+        recordings:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - "https://example.com/recording.mp3"
+            - "https://example.com/voicemail.mp3"
+security:
+  - bearerAuth: []
+  - apiKey: []
+paths:
+  /api/v3/sync/manual:
+    post:
+      summary: Trigger a manual Ringover synchronization.
+      responses:
+        '200':
+          description: Sync completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      inserted:
+                        type: integer
+                required: [success, data]
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      inserted: 5
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                badRequest:
+                  value:
+                    success: false
+                    error: Invalid since parameter
+  /api/v3/calls/{call_id}:
+    get:
+      summary: Retrieve metadata for a call.
+      parameters:
+        - in: path
+          name: call_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Call found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/CallMetadata'
+                required: [success, data]
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      phone_number: "+15551234567"
+                      direction: inbound
+                      status: completed
+                      duration: 120
+        '404':
+          description: Call not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    success: false
+                    error: Call not found
+  /api/v3/analysis/process:
+    post:
+      summary: Launch analysis batch processing.
+      parameters:
+        - in: query
+          name: max
+          schema:
+            type: integer
+            default: 50
+          description: Maximum items to process.
+      responses:
+        '200':
+          description: Batch processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batch_id:
+                    type: string
+                  processed:
+                    type: integer
+                required: [batch_id, processed]
+              examples:
+                success:
+                  value:
+                    batch_id: "1716714890"
+                    processed: 20
+        '400':
+          description: Processing error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                error:
+                  value:
+                    success: false
+                    error: Error processing analysis
+  /api/v3/crm/sync:
+    post:
+      summary: Sync a call with the CRM.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                call_id:
+                  type: integer
+              required: [call_id]
+            examples:
+              payload:
+                value:
+                  call_id: 123
+      responses:
+        '200':
+          description: CRM sync completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      deal_id:
+                        type: integer
+                        nullable: true
+                required: [success, data]
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      deal_id: 42
+        '404':
+          description: Call not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    success: false
+                    error: Call not found
+  /api/v3/n8n/call-summary/{call_id}:
+    get:
+      summary: Retrieve call summary for n8n workflows.
+      parameters:
+        - in: path
+          name: call_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Summary retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/N8nSummary'
+                required: [success, data]
+              examples:
+                success:
+                  value:
+                    success: true
+                    data:
+                      call_id: 123
+                      summary: "Resumen de prueba"
+                      metadata:
+                        phone_number: "+15551234567"
+                        direction: inbound
+                        status: completed
+                        duration: 120
+                      insights:
+                        sentiment: positive
+                        keywords: ["foo", "bar"]
+                      recordings:
+                        - "https://example.com/rec.mp3"
+        '404':
+          description: Call not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    success: false
+                    error: Call not found
