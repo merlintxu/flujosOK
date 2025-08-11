@@ -1,7 +1,8 @@
 <?php
 namespace Tests;
 
-use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Services\CallService;
+use FlujosDimension\Infrastructure\Http\RingoverClient;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Psr7\Response;
@@ -10,9 +11,9 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use FlujosDimension\Core\Config;
-use FlujosDimension\Services\RecordingTooLargeException;
+use FlujosDimension\Infrastructure\Http\RecordingTooLargeException;
 
-class RingoverServiceTest extends TestCase
+class CallServiceTest extends TestCase
 {
     private function cfg(array $vals): Config
     {
@@ -44,7 +45,8 @@ class RingoverServiceTest extends TestCase
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $calls = iterator_to_array($service->getCalls(new DateTimeImmutable('2024-01-01T00:00:00Z')));
         $this->assertCount(101, $calls);
         $this->assertCount(2, $history);
@@ -67,7 +69,8 @@ class RingoverServiceTest extends TestCase
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
 
         $since = new DateTimeImmutable('2024-01-01 01:30:00', new \DateTimeZone('Europe/Madrid'));
         iterator_to_array($service->getCalls($since));
@@ -81,7 +84,8 @@ class RingoverServiceTest extends TestCase
     {
         $http = new HttpClient();
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
 
         $call1 = [
             'cdr_id'         => 'abc',
@@ -162,7 +166,8 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $dir = sys_get_temp_dir().'/ringtest';
         $info = $service->downloadRecording('https://files.test/rec.mp3', $dir);
         $this->assertFileExists($info['path']);
@@ -182,7 +187,8 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $dir = sys_get_temp_dir() . '/ringabs';
         $info = $service->downloadRecording('https://files.test/abs.mp3', $dir);
         $this->assertStringStartsWith($dir, $info['path']);
@@ -203,7 +209,8 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $dir = sys_get_temp_dir().'/ringtest';
         $info = $service->downloadRecording('https://files.test/tmp', $dir);
         $this->assertStringEndsWith('real.mp3', $info['path']);
@@ -221,7 +228,8 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $dir = sys_get_temp_dir().'/ringtest';
         $malicious = 'https://files.test/..%2Fsecret/evil.mp3';
         $info = $service->downloadRecording($malicious, $dir);
@@ -243,7 +251,8 @@ class RingoverServiceTest extends TestCase
             'RINGOVER_API_KEY' => 't',
             'RINGOVER_MAX_RECORDING_MB' => 1
         ]);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $dir = sys_get_temp_dir().'/ringtest';
 
         try {
@@ -273,15 +282,15 @@ class RingoverServiceTest extends TestCase
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack], 0);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
-        $ref = new \ReflectionClass($service);
+        $client = new RingoverClient($http, $config);
+        $ref = new \ReflectionClass($client);
         $prop = $ref->getProperty('lastRequestAt');
         $prop->setAccessible(true);
-        $prop->setValue($service, microtime(true) - 1);
-        $method = $ref->getMethod('makeRequest');
+        $prop->setValue($client, microtime(true) - 1);
+        $method = $ref->getMethod('request');
         $method->setAccessible(true);
         $start = microtime(true);
-        $result = $method->invoke($service, 'GET', 'https://api.test/data');
+        $result = $method->invoke($client, 'GET', 'https://api.test/data');
         $elapsed = microtime(true) - $start;
         $this->assertSame(['ok' => true], $result);
         $this->assertCount(2, $history);
@@ -296,7 +305,8 @@ class RingoverServiceTest extends TestCase
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $result = $service->testConnection();
         $this->assertTrue($result['success']);
         $this->assertCount(1, $history);
@@ -310,7 +320,8 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $http = new HttpClient(['handler' => $stack]);
         $config = $this->cfg(['RINGOVER_API_KEY' => 't', 'RINGOVER_API_URL' => 'https://api.test']);
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $result = $service->testConnection();
         $this->assertFalse($result['success']);
     }
@@ -322,13 +333,12 @@ class RingoverServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-
         $config = $this->cfg([
             'RINGOVER_API_KEY' => 'secret-token',
             'RINGOVER_API_URL'   => 'https://api.config-test'
         ]);
-
-        $service = new RingoverService($http, $config);
+        $client = new RingoverClient($http, $config);
+        $service = new CallService($client);
         $service->testConnection();
 
         $this->assertCount(1, $history);
