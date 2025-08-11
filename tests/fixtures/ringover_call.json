@@ -1,0 +1,12 @@
+{
+  "cdr_id": "abc123",
+  "call_id": "call-xyz",
+  "from_number": "+1234567890",
+  "from_name": "Alice",
+  "to_name": "Bob",
+  "direction": "in",
+  "last_state": "answered",
+  "incall_duration": 30,
+  "record": "https://files.test/call.mp3",
+  "call_start": "2024-03-01T00:00:00Z"
+}
