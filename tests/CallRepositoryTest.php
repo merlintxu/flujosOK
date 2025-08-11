@@ -34,7 +34,9 @@ class CallRepositoryTest extends TestCase
             incall_duration INTEGER,
             created_at TEXT,
             recording_path TEXT,
-            has_recording INTEGER DEFAULT 0
+            has_recording INTEGER DEFAULT 0,
+            correlation_id TEXT,
+            batch_id TEXT
         );");
 
         $repo = $this->repo($pdo);
@@ -55,7 +57,7 @@ class CallRepositoryTest extends TestCase
             'incall_duration'=> 8,
         ];
 
-        $inserted = $repo->insertOrIgnore($data);
+        $inserted = $repo->insertOrIgnore($data + ['batch_id' => 'b1']);
         $this->assertSame(1, $inserted);
 
         $row = $pdo->query("SELECT * FROM calls WHERE ringover_id='r1'")->fetch(PDO::FETCH_ASSOC);
@@ -70,6 +72,12 @@ class CallRepositoryTest extends TestCase
         $this->assertSame('2024-01-01 00:00:00', $row['start_time']);
         $this->assertSame(10, (int)$row['total_duration']);
         $this->assertSame(8, (int)$row['incall_duration']);
+        $this->assertSame('b1', $row['batch_id']);
+        $this->assertNotEmpty($row['correlation_id']);
+
+        // Duplicate by call_id should be ignored
+        $dup = $repo->insertOrIgnore($data + ['batch_id' => 'b1']);
+        $this->assertSame(0, $dup);
     }
 
     public function testAddRecordingInsertsAndUpdates(): void
@@ -175,7 +183,9 @@ class CallRepositoryTest extends TestCase
             incall_duration INTEGER,
             created_at TEXT,
             recording_path TEXT,
-            has_recording INTEGER DEFAULT 0
+            has_recording INTEGER DEFAULT 0,
+            correlation_id TEXT,
+            batch_id TEXT
         );");
 
         $repo = $this->repo($pdo);
@@ -226,21 +236,25 @@ class CallRepositoryTest extends TestCase
             call_id INTEGER,
             result TEXT,
             error_message TEXT,
+            batch_id TEXT,
+            correlation_id TEXT,
             created_at TEXT
         );");
         $pdo->exec("INSERT INTO calls (id, crm_synced) VALUES (1,0)");
 
         $repo = $this->repo($pdo);
-        $repo->markCrmSynced(1, 99);
+        $repo->markCrmSynced(1, 99, 'batch-x', 'corr-x');
 
         $synced = $pdo->query('SELECT crm_synced, pipedrive_deal_id FROM calls WHERE id=1')->fetch(PDO::FETCH_ASSOC);
         $this->assertSame(1, (int)$synced['crm_synced']);
         $this->assertSame(99, (int)$synced['pipedrive_deal_id']);
 
-        $log = $pdo->query('SELECT call_id, result, error_message FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
+        $log = $pdo->query('SELECT call_id, result, error_message, batch_id, correlation_id FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
         $this->assertSame(1, (int)$log['call_id']);
         $this->assertSame('success', $log['result']);
         $this->assertNull($log['error_message']);
+        $this->assertSame('batch-x', $log['batch_id']);
+        $this->assertSame('corr-x', $log['correlation_id']);
     }
 
     public function testLogCrmSyncStoresError(): void
@@ -251,15 +265,19 @@ class CallRepositoryTest extends TestCase
             call_id INTEGER,
             result TEXT,
             error_message TEXT,
+            batch_id TEXT,
+            correlation_id TEXT,
             created_at TEXT
         );");
 
         $repo = $this->repo($pdo);
-        $repo->logCrmSync(5, 'error', 'fail');
+        $repo->logCrmSync(5, 'error', 'fail', 'batch-z', 'corr-z');
 
-        $row = $pdo->query('SELECT call_id, result, error_message FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
+        $row = $pdo->query('SELECT call_id, result, error_message, batch_id, correlation_id FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
         $this->assertSame(5, (int)$row['call_id']);
         $this->assertSame('error', $row['result']);
         $this->assertSame('fail', $row['error_message']);
+        $this->assertSame('batch-z', $row['batch_id']);
+        $this->assertSame('corr-z', $row['correlation_id']);
     }
 }

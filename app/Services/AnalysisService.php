@@ -25,13 +25,13 @@ class AnalysisService
      * @param array<string,mixed> $extra
      * @return array<string,mixed>
      */
-    public function chat(array $messages, array $extra = []): array
+    public function chat(array $messages, array $extra = [], ?string $batchId = null, ?string $correlationId = null): array
     {
         if ($this->usedTokens >= $this->tokenLimit) {
             throw new RuntimeException('OpenAI token limit exceeded');
         }
 
-        $resp = $this->client->chat($messages, $extra);
+        $resp = $this->client->chat($messages, $extra, $batchId, $correlationId);
         $this->usedTokens += $resp['usage']['total_tokens'] ?? 0;
 
         if ($this->usedTokens > $this->tokenLimit) {

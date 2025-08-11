@@ -47,9 +47,19 @@ class SyncHourlyCommand extends Command
 
             $since = new \DateTimeImmutable('-1 hour');
             $inserted = 0;
-            foreach ($ringover->getCalls($since) as $call) {
-                $mapped = $ringover->mapCallFields($call);
+            $batchId = bin2hex(random_bytes(16));
+            foreach ($ringover->getCalls($since, false, null, $batchId) as $call) {
+                $correlationId = bin2hex(random_bytes(16));
+                $mapped = $ringover->mapCallFields($call) + [
+                    'batch_id'       => $batchId,
+                    'correlation_id' => $correlationId,
+                ];
                 $repo->insertOrIgnore($mapped);
+                $container->resolve('logger')->info('call_synced', [
+                    'batch_id' => $batchId,
+                    'correlation_id' => $correlationId,
+                    'call_id' => $mapped['call_id'] ?? null,
+                ]);
                 $inserted++;
             }
 

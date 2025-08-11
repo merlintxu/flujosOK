@@ -70,6 +70,17 @@ final class CallRepository
             return 0;
         }
 
+        $call['correlation_id'] = $call['correlation_id'] ?? bin2hex(random_bytes(16));
+
+        $exists = $this->db->prepare('SELECT id FROM calls WHERE call_id = :call_id OR correlation_id = :correlation_id LIMIT 1');
+        $exists->execute([
+            ':call_id' => $call['call_id'] ?? null,
+            ':correlation_id' => $call['correlation_id'],
+        ]);
+        if ($exists->fetchColumn() !== false) {
+            return 0;
+        }
+
         $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
         $prefix = $driver === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
 
@@ -77,31 +88,33 @@ final class CallRepository
                     ringover_id, call_id, phone_number, contact_number,
                     caller_name, contact_name, direction, status, duration,
                     recording_url, voicemail_url, start_time, total_duration,
-                    incall_duration, created_at
+                    incall_duration, created_at, correlation_id, batch_id
                 ) VALUES (
                     :ringover_id, :call_id, :phone_number, :contact_number,
                     :caller_name, :contact_name, :direction, :status, :duration,
                     :recording_url, :voicemail_url, :start_time, :total_duration,
-                    :incall_duration, :created_at
+                    :incall_duration, :created_at, :correlation_id, :batch_id
                 )";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
-            ':ringover_id'   => $call['ringover_id']    ?? null,
-            ':call_id'       => $call['call_id']        ?? null,
-            ':phone_number'  => $call['phone_number']   ?? null,
-            ':contact_number'=> $call['contact_number'] ?? null,
-            ':caller_name'   => $call['caller_name']    ?? null,
-            ':contact_name'  => $call['contact_name']   ?? null,
-            ':direction'     => $call['direction']      ?? 'inbound',
-            ':status'        => $call['status']         ?? 'pending',
-            ':duration'      => $call['duration']       ?? 0,
-            ':recording_url' => $call['recording_url']  ?? null,
-            ':voicemail_url' => $call['voicemail_url']  ?? null,
-            ':start_time'    => $call['start_time']     ?? null,
-            ':total_duration'=> $call['total_duration'] ?? null,
+            ':ringover_id'    => $call['ringover_id']    ?? null,
+            ':call_id'        => $call['call_id']        ?? null,
+            ':phone_number'   => $call['phone_number']   ?? null,
+            ':contact_number' => $call['contact_number'] ?? null,
+            ':caller_name'    => $call['caller_name']    ?? null,
+            ':contact_name'   => $call['contact_name']   ?? null,
+            ':direction'      => $call['direction']      ?? 'inbound',
+            ':status'         => $call['status']         ?? 'pending',
+            ':duration'       => $call['duration']       ?? 0,
+            ':recording_url'  => $call['recording_url']  ?? null,
+            ':voicemail_url'  => $call['voicemail_url']  ?? null,
+            ':start_time'     => $call['start_time']     ?? null,
+            ':total_duration' => $call['total_duration'] ?? null,
             ':incall_duration'=> $call['incall_duration'] ?? null,
-            ':created_at'    => $call['start_time']     ?? date('Y-m-d H:i:s'),
+            ':created_at'     => $call['start_time']     ?? date('Y-m-d H:i:s'),
+            ':correlation_id' => $call['correlation_id'],
+            ':batch_id'       => $call['batch_id']       ?? null,
         ]);
 
         return (int)$stmt->rowCount();
@@ -182,27 +195,29 @@ final class CallRepository
     }
 
     /** Mark a call as synced to CRM */
-    public function markCrmSynced(int $id, int $dealId): void
+    public function markCrmSynced(int $id, int $dealId, ?string $batchId = null, ?string $correlationId = null): void
     {
         $stmt = $this->db->prepare(
             'UPDATE calls SET crm_synced = 1, pipedrive_deal_id = :dealId WHERE id = :id'
         );
         $stmt->execute([':dealId' => $dealId, ':id' => $id]);
 
-        $this->logCrmSync($id, 'success');
+        $this->logCrmSync($id, 'success', null, $batchId, $correlationId);
     }
 
     /** Log a CRM sync attempt */
-    public function logCrmSync(int $callId, string $result, ?string $errorMessage = null): void
+    public function logCrmSync(int $callId, string $result, ?string $errorMessage = null, ?string $batchId = null, ?string $correlationId = null): void
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO crm_sync_logs (call_id, result, error_message, created_at) VALUES (:call_id, :result, :error_message, :created_at)'
+            'INSERT INTO crm_sync_logs (call_id, result, error_message, batch_id, correlation_id, created_at) VALUES (:call_id, :result, :error_message, :batch_id, :correlation_id, :created_at)'
         );
         $stmt->execute([
-            ':call_id' => $callId,
-            ':result' => $result,
+            ':call_id'       => $callId,
+            ':result'        => $result,
             ':error_message' => $errorMessage,
-            ':created_at' => date('Y-m-d H:i:s'),
+            ':batch_id'      => $batchId,
+            ':correlation_id'=> $correlationId,
+            ':created_at'    => date('Y-m-d H:i:s'),
         ]);
     }
 
