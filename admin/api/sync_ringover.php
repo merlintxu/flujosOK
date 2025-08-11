@@ -8,9 +8,15 @@ use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Core\Request;
 
 // Configuración de niveles de log
-define('LOG_LEVEL_DEBUG', 0);
-define('LOG_LEVEL_INFO', 1);
-define('LOG_LEVEL_ERROR', 2);
+if (!defined('LOG_LEVEL_DEBUG')) {
+    define('LOG_LEVEL_DEBUG', 0);
+}
+if (!defined('LOG_LEVEL_INFO')) {
+    define('LOG_LEVEL_INFO', 1);
+}
+if (!defined('LOG_LEVEL_ERROR')) {
+    define('LOG_LEVEL_ERROR', 2);
+}
 
 // Inicializa el log
 $logDir = dirname(__DIR__, 2) . '/storage/logs';
