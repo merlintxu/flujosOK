@@ -86,11 +86,13 @@ CREATE TABLE `api_configurations` (
 
 CREATE TABLE `api_monitoring` (
   `id` int(11) NOT NULL,
-  `api_name` varchar(100) NOT NULL,
-  `endpoint` varchar(255) NOT NULL,
+  `service` varchar(100) NOT NULL,
+  `request_path` varchar(255) NOT NULL,
+  `method` varchar(10) NOT NULL,
   `response_time` int(11) NOT NULL,
   `status_code` int(11) NOT NULL,
   `success` tinyint(1) NOT NULL,
+  `correlation_id` varchar(255) DEFAULT NULL,
   `error_message` text DEFAULT NULL,
   `timestamp` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -99,10 +101,10 @@ CREATE TABLE `api_monitoring` (
 -- Volcado de datos para la tabla `api_monitoring`
 --
 
-INSERT INTO `api_monitoring` (`id`, `api_name`, `endpoint`, `response_time`, `status_code`, `success`, `error_message`, `timestamp`) VALUES
-(1, 'Ringover', '/v2/calls', 372, 200, 1, NULL, '2025-07-18 10:37:50'),
-(2, 'OpenAI', '/v1/models', 424, 200, 1, NULL, '2025-07-18 10:37:50'),
-(3, 'Pipedrive', '/v1/users', 187, 200, 1, NULL, '2025-07-18 10:37:50');
+INSERT INTO `api_monitoring` (`id`, `service`, `request_path`, `method`, `response_time`, `status_code`, `success`, `correlation_id`, `error_message`, `timestamp`) VALUES
+(1, 'Ringover', '/v2/calls', 'GET', 372, 200, 1, NULL, NULL, '2025-07-18 10:37:50'),
+(2, 'OpenAI', '/v1/models', 'GET', 424, 200, 1, NULL, NULL, '2025-07-18 10:37:50'),
+(3, 'Pipedrive', '/v1/users', 'GET', 187, 200, 1, NULL, NULL, '2025-07-18 10:37:50');
 
 -- --------------------------------------------------------
 
@@ -818,7 +820,7 @@ ALTER TABLE `api_configurations`
 --
 ALTER TABLE `api_monitoring`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_api_timestamp` (`api_name`,`timestamp`),
+  ADD KEY `idx_service_timestamp` (`service`,`timestamp`),
   ADD KEY `idx_success_timestamp` (`success`,`timestamp`);
 
 --

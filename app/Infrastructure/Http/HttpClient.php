@@ -37,10 +37,12 @@ final class HttpClient
      */
     public function request(string $method, string $uri, array $options = []): ResponseInterface
     {
-        $apiName       = $options['api_name']      ?? 'unknown';
+        $service       = $options['service']       ?? 'unknown';
         $correlationId = $options['correlation_id'] ?? null;
         $batchId       = $options['batch_id']       ?? null;
-        unset($options['api_name'], $options['correlation_id'], $options['batch_id']);
+        unset($options['service'], $options['correlation_id'], $options['batch_id']);
+
+        $requestPath = parse_url($uri, PHP_URL_PATH) ?: $uri;
 
         if ($correlationId !== null) {
             $options['headers']['X-Correlation-ID'] = $correlationId;
@@ -65,8 +67,9 @@ final class HttpClient
 
                 if ($this->logger) {
                     $this->logger->info('api_request', [
-                        'api_name'       => $apiName,
-                        'endpoint'       => $uri,
+                        'service'        => $service,
+                        'request_path'   => $requestPath,
+                        'method'         => $method,
                         'status_code'    => $status,
                         'response_time'  => $elapsedMs,
                         'success'        => $success,
@@ -83,15 +86,17 @@ final class HttpClient
                     ], JSON_UNESCAPED_UNICODE);
 
                     $stmt = $this->db->prepare(
-                        'INSERT INTO api_monitoring (api_name, endpoint, response_time, status_code, success, error_message, timestamp)'
-                        . ' VALUES (:api_name, :endpoint, :response_time, :status_code, :success, :error_message, CURRENT_TIMESTAMP)'
+                        'INSERT INTO api_monitoring (service, request_path, method, response_time, status_code, success, correlation_id, error_message, timestamp)'
+                        . ' VALUES (:service, :request_path, :method, :response_time, :status_code, :success, :correlation_id, :error_message, CURRENT_TIMESTAMP)'
                     );
                     $stmt->execute([
-                        ':api_name'      => $apiName,
-                        ':endpoint'      => $uri,
+                        ':service'       => $service,
+                        ':request_path'  => $requestPath,
+                        ':method'        => $method,
                         ':response_time' => $elapsedMs,
                         ':status_code'   => $status,
                         ':success'       => $success ? 1 : 0,
+                        ':correlation_id'=> $correlationId,
                         ':error_message' => $payload,
                     ]);
                 }
