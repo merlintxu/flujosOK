@@ -18,7 +18,7 @@ final class AnalyticsService
      */
     public function __construct(
         private readonly CallRepository $repo,
-        private readonly OpenAIService  $openai,
+        private readonly AnalysisService $openai,
         private readonly Logger $logger
     ) {}
 

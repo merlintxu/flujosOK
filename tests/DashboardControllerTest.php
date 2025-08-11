@@ -11,6 +11,7 @@ use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Services\OpenAIService;
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Infrastructure\Http\HttpClient;
+use FlujosDimension\Infrastructure\Http\OpenAIClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 
@@ -60,7 +61,8 @@ class DashboardControllerTest extends TestCase
         $container->instance('database', $db);
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
-        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $client = new OpenAIClient(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $openai = new OpenAIService($client);
         $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $container->instance('analyticsService', $analytics);
         $container->instance('ringoverService', new DummyRingover());
@@ -87,7 +89,8 @@ class DashboardControllerTest extends TestCase
         $container->instance('database', new DummyDbForSystemInfo());
         $pdo = new \PDO('sqlite::memory:');
         $repo = new CallRepository($pdo);
-        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $client = new OpenAIClient(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $openai = new OpenAIService($client);
         $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $cacheDir = sys_get_temp_dir() . '/fd-cache';
         if (!is_dir($cacheDir)) { mkdir($cacheDir); }
@@ -123,7 +126,8 @@ class DashboardControllerTest extends TestCase
         $stmt->execute(['2','222','outbound','missed',0,'negative',$now->sub(new \DateInterval('P1D'))->format('Y-m-d H:i:s')]);
 
         $repo = new CallRepository($pdo);
-        $openai = new OpenAIService(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $client = new OpenAIClient(new HttpClient(['handler' => HandlerStack::create(new MockHandler())]), 'k');
+        $openai = new OpenAIService($client);
         $analytics = new AnalyticsService($repo, $openai, new \FlujosDimension\Core\Logger(sys_get_temp_dir()));
         $container->instance('analyticsService', $analytics);
         $container->instance('ringoverService', new DummyRingover());

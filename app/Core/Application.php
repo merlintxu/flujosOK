@@ -143,50 +143,75 @@ private function registerServices(): void
     );
 
     /* ---------- Integraciones externas ---------- */
-    // OpenAI
+    // HTTP clients
     $this->container->singleton(
-        \FlujosDimension\Services\OpenAIService::class,
-        fn ($c) => new \FlujosDimension\Services\OpenAIService(
+        \FlujosDimension\Infrastructure\Http\OpenAIClient::class,
+        fn ($c) => new \FlujosDimension\Infrastructure\Http\OpenAIClient(
             $c->resolve('httpClient'),
             $this->config->get('OPENAI_API_KEY')
         )
     );
-
-    // Pipedrive
     $this->container->singleton(
-        \FlujosDimension\Services\PipedriveService::class,
-        fn ($c) => new \FlujosDimension\Services\PipedriveService(
+        \FlujosDimension\Infrastructure\Http\PipedriveClient::class,
+        fn ($c) => new \FlujosDimension\Infrastructure\Http\PipedriveClient(
             $c->resolve('httpClient'),
             $this->config->get('PIPEDRIVE_API_TOKEN')
         )
     );
-
-    // Ringover
     $this->container->singleton(
-        \FlujosDimension\Services\RingoverService::class,
-        fn ($c) => new \FlujosDimension\Services\RingoverService(
+        \FlujosDimension\Infrastructure\Http\RingoverClient::class,
+        fn ($c) => new \FlujosDimension\Infrastructure\Http\RingoverClient(
             $c->resolve('httpClient'),
             $this->config
         )
     );
-    $this->container->alias(
-        \FlujosDimension\Services\RingoverService::class,
-        'ringoverService'
+
+    // Servicios
+    $this->container->singleton(
+        \FlujosDimension\Services\AnalysisService::class,
+        fn ($c) => new \FlujosDimension\Services\AnalysisService(
+            $c->resolve(\FlujosDimension\Infrastructure\Http\OpenAIClient::class)
+        )
     );
+    $this->container->alias(\FlujosDimension\Services\AnalysisService::class, \FlujosDimension\Services\OpenAIService::class);
+
+    $this->container->singleton(
+        \FlujosDimension\Services\CRMService::class,
+        fn ($c) => new \FlujosDimension\Services\CRMService(
+            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class)
+        )
+    );
+    $this->container->alias(\FlujosDimension\Services\CRMService::class, \FlujosDimension\Services\PipedriveService::class);
+
+    $this->container->singleton(
+        \FlujosDimension\Services\CallService::class,
+        fn ($c) => new \FlujosDimension\Services\CallService(
+            $c->resolve(\FlujosDimension\Infrastructure\Http\RingoverClient::class)
+        )
+    );
+    $this->container->alias(\FlujosDimension\Services\CallService::class, \FlujosDimension\Services\RingoverService::class);
+    $this->container->alias(\FlujosDimension\Services\CallService::class, 'ringoverService');
+
+    $this->container->singleton(
+        \FlujosDimension\Services\SyncService::class,
+        fn ($c) => new \FlujosDimension\Services\SyncService(
+            $c->resolve(\FlujosDimension\Services\CallService::class),
+            $c->resolve(\FlujosDimension\Services\AnalysisService::class),
+            $c->resolve(\FlujosDimension\Services\CRMService::class)
+        )
+    );
+    $this->container->alias(\FlujosDimension\Services\SyncService::class, 'syncService');
 
     /* ---------- Servicios de dominio ---------- */
     $this->container->singleton(
-        \FlujosDimension\Services\AnalyticsService::class,            // <- ruta exacta: app\Services\AnalyticsService.php
+        \FlujosDimension\Services\AnalyticsService::class,
         fn ($c) => new \FlujosDimension\Services\AnalyticsService(
             $c->resolve('callRepository'),
-            $c->resolve(\FlujosDimension\Services\OpenAIService::class),
+            $c->resolve(\FlujosDimension\Services\AnalysisService::class),
             $c->resolve('logger')
         )
     );
-    $this->container->alias(
-        \FlujosDimension\Services\AnalyticsService::class,
-        'analyticsService'
-    );
+    $this->container->alias(\FlujosDimension\Services\AnalyticsService::class, 'analyticsService');
 }
 
    

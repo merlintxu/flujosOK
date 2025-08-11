@@ -1,8 +1,9 @@
 <?php
 namespace Tests;
 
-use FlujosDimension\Services\PipedriveService;
+use FlujosDimension\Infrastructure\Http\PipedriveClient;
 use FlujosDimension\Infrastructure\Http\HttpClient;
+use FlujosDimension\Services\CRMService;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -10,7 +11,7 @@ use GuzzleHttp\Middleware;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-class PipedriveServiceTest extends TestCase
+class CRMServiceTest extends TestCase
 {
     public function testFindPersonByPhoneRequest()
     {
@@ -21,7 +22,8 @@ class PipedriveServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-        $service = new PipedriveService($http, 't');
+        $client  = new PipedriveClient($http, 't');
+        $service = new CRMService($client);
 
         $id = $service->findPersonByPhone('123');
 
@@ -38,7 +40,8 @@ class PipedriveServiceTest extends TestCase
     {
         $mock = new MockHandler([new Response(500)]);
         $http = new HttpClient(['handler' => HandlerStack::create($mock)]);
-        $service = new PipedriveService($http, 't');
+        $client  = new PipedriveClient($http, 't');
+        $service = new CRMService($client);
 
         $this->expectException(RuntimeException::class);
         $service->findPersonByPhone('123');
@@ -53,7 +56,8 @@ class PipedriveServiceTest extends TestCase
         $stack = HandlerStack::create($mock);
         $stack->push(Middleware::history($history));
         $http = new HttpClient(['handler' => $stack]);
-        $service = new PipedriveService($http, 't');
+        $client  = new PipedriveClient($http, 't');
+        $service = new CRMService($client);
 
         $id = $service->createOrUpdateDeal(['title' => 'Deal']);
 
@@ -68,7 +72,8 @@ class PipedriveServiceTest extends TestCase
     {
         $mock = new MockHandler([new Response(400)]);
         $http = new HttpClient(['handler' => HandlerStack::create($mock)]);
-        $service = new PipedriveService($http, 't');
+        $client  = new PipedriveClient($http, 't');
+        $service = new CRMService($client);
 
         $this->expectException(RuntimeException::class);
         $service->createOrUpdateDeal(['title' => 'Deal']);
