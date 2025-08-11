@@ -1,4 +1,5 @@
 name: CI
+# GitHub Actions workflow for continuous integration
 
 on:
   push:
