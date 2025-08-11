@@ -296,8 +296,7 @@
                 </div>
                 <div class="form-group">
                     <label for="DB_PASS">Contraseña de Base de Datos</label>
-                    <input type="password" id="DB_PASS" name="DB_PASS" 
-                           value="<?php echo htmlspecialchars($this->config->get('DB_PASS', '')); ?>" required>
+                    <input type="password" id="DB_PASS" name="DB_PASS" placeholder="********" required>
                 </div>
                 
                 <div class="section-title">📞 API Ringover</div>
@@ -308,15 +307,13 @@
                                value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_URL', 'https://public-api.ringover.com/v2')); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="RINGOVER_API_KEY">Clave de API Ringover</label>
-                        <input type="text" id="RINGOVER_API_KEY" name="RINGOVER_API_KEY"
-                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_API_KEY', '')); ?>" required>
+                          <label for="RINGOVER_API_KEY">Clave de API Ringover</label>
+                          <input type="password" id="RINGOVER_API_KEY" name="RINGOVER_API_KEY" placeholder="********" required>
                         <button type="button" class="test-btn" onclick="testRingoverApi()">Probar</button>
                     </div>
                     <div class="form-group">
-                        <label for="RINGOVER_WEBHOOK_SECRET">Secreto de Webhook</label>
-                        <input type="text" id="RINGOVER_WEBHOOK_SECRET" name="RINGOVER_WEBHOOK_SECRET"
-                               value="<?php echo htmlspecialchars($this->config->get('RINGOVER_WEBHOOK_SECRET', '')); ?>">
+                          <label for="RINGOVER_WEBHOOK_SECRET">Secreto de Webhook</label>
+                          <input type="password" id="RINGOVER_WEBHOOK_SECRET" name="RINGOVER_WEBHOOK_SECRET" placeholder="********">
                     </div>
                     <div class="form-group">
                         <label for="RINGOVER_MAX_RECORDING_MB">Tamaño máximo grabación (MB)</label>
@@ -333,9 +330,8 @@
                                value="<?php echo htmlspecialchars($this->config->get('OPENAI_API_URL', 'https://api.openai.com/v1')); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="OPENAI_API_KEY">Clave de API OpenAI</label>
-                        <input type="text" id="OPENAI_API_KEY" name="OPENAI_API_KEY" 
-                               value="<?php echo htmlspecialchars($this->config->get('OPENAI_API_KEY', '')); ?>" required>
+                          <label for="OPENAI_API_KEY">Clave de API OpenAI</label>
+                          <input type="password" id="OPENAI_API_KEY" name="OPENAI_API_KEY" placeholder="********" required>
                         <button type="button" class="test-btn" onclick="testOpenAiApi()">Probar</button>
                     </div>
                 </div>
@@ -348,9 +344,8 @@
                                value="<?php echo htmlspecialchars($this->config->get('PIPEDRIVE_API_URL', 'https://api.pipedrive.com/v1')); ?>" required>
                     </div>
                     <div class="form-group">
-                        <label for="PIPEDRIVE_API_TOKEN">Token de API Pipedrive</label>
-                        <input type="text" id="PIPEDRIVE_API_TOKEN" name="PIPEDRIVE_API_TOKEN" 
-                               value="<?php echo htmlspecialchars($this->config->get('PIPEDRIVE_API_TOKEN', '')); ?>" required>
+                          <label for="PIPEDRIVE_API_TOKEN">Token de API Pipedrive</label>
+                          <input type="password" id="PIPEDRIVE_API_TOKEN" name="PIPEDRIVE_API_TOKEN" placeholder="********" required>
                         <button type="button" class="test-btn" onclick="testPipedriveApi()">Probar</button>
                     </div>
                 </div>
@@ -358,9 +353,8 @@
                 <div class="section-title">🔐 Seguridad y JWT</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="JWT_SECRET">Clave Secreta JWT</label>
-                        <input type="text" id="JWT_SECRET" name="JWT_SECRET" 
-                               value="<?php echo htmlspecialchars($this->config->get('JWT_SECRET', '')); ?>" required>
+                          <label for="JWT_SECRET">Clave Secreta JWT</label>
+                          <input type="password" id="JWT_SECRET" name="JWT_SECRET" placeholder="********" required>
                         <div class="help-text">Mínimo 32 caracteres para mayor seguridad</div>
                     </div>
                     <div class="form-group">

@@ -17,7 +17,20 @@ class ConfigController extends BaseController
     {
         try {
             $config = Config::getInstance();
-            return $this->successResponse($config->all());
+            $data   = $config->all();
+            $sensitive = [
+                'RINGOVER_API_KEY',
+                'PIPEDRIVE_API_TOKEN',
+                'OPENAI_API_KEY',
+                'JWT_SECRET',
+                'DB_PASS',
+            ];
+            foreach ($sensitive as $key) {
+                if (isset($data[$key])) {
+                    $data[$key] = '[hidden]';
+                }
+            }
+            return $this->successResponse($data);
         } catch (\Exception $e) {
             return $this->handleError($e, 'Error loading configuration');
         }
