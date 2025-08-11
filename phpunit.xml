@@ -8,6 +8,14 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <coverage>
+        <include>
+            <directory>app</directory>
+        </include>
+        <exclude>
+            <directory>tests</directory>
+        </exclude>
+    </coverage>
     <php>
         <env name="DB_HOST" value="localhost"/>
         <env name="DB_NAME" value="testdb"/>
