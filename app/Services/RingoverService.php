@@ -205,13 +205,11 @@ class RingoverService
             default => $directionRaw,
         };
 
-        $lastState  = $call['last_state'] ?? null;
-        $answered   = $call['is_answered'] ?? null;
-        $status     = null;
-        if ($lastState !== null) {
-            if (in_array($lastState, ['busy', 'failed'], true)) {
-                $status = $lastState;
-            }
+        $lastState = $call['last_state'] ?? ($call['status'] ?? null);
+        $answered  = $call['is_answered'] ?? null;
+        $status    = $lastState;
+        if ($status !== null && !in_array($status, ['busy', 'failed', 'answered', 'missed'], true)) {
+            $status = null;
         }
         if ($status === null && $answered !== null) {
             $status = $answered ? 'answered' : 'missed';
