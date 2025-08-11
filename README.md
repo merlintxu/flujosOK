@@ -69,6 +69,17 @@ Optional: `FTP_PORT` or `FTP_SERVER_DIR` if you need to override defaults.
 - [Project documentation (Spanish)](docs/README_es.md)
 - [API reference](docs/API.md)
 - [Module and class reference](docs/modules.md)
+- [OpenAPI specification](docs/openapi.yaml)
+
+### Swagger UI
+
+To explore the API interactively, serve the OpenAPI file with Swagger UI:
+
+```bash
+docker run --rm -p 8080:8080 -e SWAGGER_JSON=/openapi.yaml -v $(pwd)/docs/openapi.yaml:/openapi.yaml swaggerapi/swagger-ui
+```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ## License
 
