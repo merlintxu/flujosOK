@@ -1,0 +1,70 @@
+#!/usr/bin/env php
+<?php
+require __DIR__ . '/../vendor/autoload.php';
+
+use FlujosDimension\Core\Application;
+use PDO;
+use Throwable;
+
+$app = new Application();
+$container = $app->getContainer();
+/** @var PDO $pdo */
+$pdo = $container->resolve(PDO::class);
+
+$pdo->exec('CREATE TABLE IF NOT EXISTS async_tasks_dlq (
+    id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+    task_id VARCHAR(100) NOT NULL,
+    task_type VARCHAR(50) NOT NULL,
+    task_data LONGTEXT,
+    error TEXT,
+    failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)');
+
+$maxAttempts = 3;
+
+while (true) {
+    $task = fetchTask($pdo);
+    if (!$task) {
+        sleep(5);
+        continue;
+    }
+
+    $pdo->prepare('UPDATE async_tasks SET status = :s, attempts = attempts + 1 WHERE id = :id')
+        ->execute([':s' => 'processing', ':id' => $task['id']]);
+
+    try {
+        $jobClass = $task['task_type'];
+        $payload = json_decode($task['task_data'], true, 512, JSON_THROW_ON_ERROR);
+        $job = $container->make($jobClass);
+        if (!method_exists($job, 'handle')) {
+            throw new RuntimeException('Job missing handle method');
+        }
+        $job->handle($payload);
+        $pdo->prepare('DELETE FROM async_tasks WHERE id = :id')->execute([':id' => $task['id']]);
+    } catch (Throwable $e) {
+        $attempts = (int)$task['attempts'] + 1;
+        if ($attempts >= $maxAttempts) {
+            $pdo->prepare('INSERT INTO async_tasks_dlq (task_id, task_type, task_data, error) VALUES (:task_id,:task_type,:task_data,:error)')
+                ->execute([
+                    ':task_id' => $task['task_id'],
+                    ':task_type' => $task['task_type'],
+                    ':task_data' => $task['task_data'],
+                    ':error' => $e->getMessage(),
+                ]);
+            $pdo->prepare('DELETE FROM async_tasks WHERE id = :id')->execute([':id' => $task['id']]);
+        } else {
+            $next = date('Y-m-d H:i:s', time() + ($attempts * 60));
+            $pdo->prepare('UPDATE async_tasks SET status = :s, scheduled_at = :t WHERE id = :id')
+                ->execute([':s' => 'pending', ':t' => $next, ':id' => $task['id']]);
+        }
+        fwrite(STDERR, "Job {$task['task_type']} failed: {$e->getMessage()}\n");
+    }
+}
+
+function fetchTask(PDO $pdo): ?array
+{
+    $stmt = $pdo->prepare("SELECT * FROM async_tasks WHERE status = 'pending' AND scheduled_at <= :now ORDER BY priority ASC, id ASC LIMIT 1");
+    $stmt->execute([':now' => date('Y-m-d H:i:s')]);
+    $task = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $task ?: null;
+}

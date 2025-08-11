@@ -142,6 +142,17 @@ private function registerServices(): void
         'syncHistoryRepository'
     );
 
+    $this->container->singleton(
+        \FlujosDimension\Repositories\AsyncTaskRepository::class,
+        fn ($c) => new \FlujosDimension\Repositories\AsyncTaskRepository(
+            $c->resolve(PDO::class)
+        )
+    );
+    $this->container->alias(
+        \FlujosDimension\Repositories\AsyncTaskRepository::class,
+        'asyncTaskRepository'
+    );
+
     /* ---------- Integraciones externas ---------- */
     // HTTP clients
     $this->container->singleton(

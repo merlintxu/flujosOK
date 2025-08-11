@@ -41,33 +41,11 @@ class RingoverWebhookController extends BaseController
                 return $this->jsonResponse(['success' => false, 'errors' => $errors], 422);
             }
 
-            /** @var RingoverService $ringover */
-            $ringover = $this->service(RingoverService::class);
-            $storageDir   = dirname(__DIR__, 2) . '/storage';
-            $recordingsDir = $storageDir . '/recordings';
-            $info = $ringover->downloadRecording($dto->url, $recordingsDir);
+            /** @var \FlujosDimension\Repositories\AsyncTaskRepository $tasks */
+            $tasks = $this->service(\FlujosDimension\Repositories\AsyncTaskRepository::class);
+            $tasks->enqueue(\FlujosDimension\Jobs\DownloadRecordingJob::class, $dto->toArray());
 
-            /** @var CallRepository $repo */
-            $repo = $this->service(CallRepository::class);
-            $callId = $repo->findIdByRingoverId($data['call_id']);
-            if ($callId === null) {
-                return $this->errorResponse('Call not found', 404);
-            }
-
-            $metadata = $info;
-            $metadata['url'] = $dto->url;
-            $metadata['duration'] = $dto->duration;
-
-            $repo->addRecording($callId, $metadata);
-
-            /** @var PDO $pdo */
-            $pdo = $this->service('database');
-            $recordingId = (int)$pdo->lastInsertId();
-
-            return $this->successResponse([
-                'path' => $info['path'],
-                'recording_id' => $recordingId,
-            ]);
+            return $this->successResponse(['queued' => true]);
         } catch (\Exception $e) {
             return $this->handleError($e, 'Error processing recording webhook');
         }
@@ -100,33 +78,11 @@ class RingoverWebhookController extends BaseController
                 return $this->jsonResponse(['success' => false, 'errors' => $errors], 422);
             }
 
-            /** @var RingoverService $ringover */
-            $ringover = $this->service(RingoverService::class);
-            $storageDir    = dirname(__DIR__, 2) . '/storage';
-            $voicemailsDir = $storageDir . '/voicemails';
-            $info = $ringover->downloadVoicemail($dto->url, $voicemailsDir);
+            /** @var \FlujosDimension\Repositories\AsyncTaskRepository $tasks */
+            $tasks = $this->service(\FlujosDimension\Repositories\AsyncTaskRepository::class);
+            $tasks->enqueue(\FlujosDimension\Jobs\DownloadRecordingJob::class, $dto->toArray());
 
-            /** @var CallRepository $repo */
-            $repo = $this->service(CallRepository::class);
-            $callId = $repo->findIdByRingoverId($data['call_id']);
-            if ($callId === null) {
-                return $this->errorResponse('Call not found', 404);
-            }
-
-            $metadata = $info;
-            $metadata['url'] = $dto->url;
-            $metadata['duration'] = $dto->duration;
-
-            $repo->addRecording($callId, $metadata);
-
-            /** @var PDO $pdo */
-            $pdo = $this->service('database');
-            $recordingId = (int)$pdo->lastInsertId();
-
-            return $this->successResponse([
-                'path' => $info['path'],
-                'recording_id' => $recordingId,
-            ]);
+            return $this->successResponse(['queued' => true]);
         } catch (\Exception $e) {
             return $this->handleError($e, 'Error processing voicemail webhook');
         }
