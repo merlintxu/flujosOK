@@ -15,21 +15,26 @@ class Call extends BaseModel
     protected string $table = 'calls';
     protected array $sortable = [
         'id', 'created_at', 'updated_at', 'duration', 'status', 'direction',
-        'phone_number', 'ringover_id'
+        'phone_number', 'ringover_id', 'call_id', 'start_time'
     ];
     protected array $fillable = [
-        'ringover_id', 'phone_number', 'direction', 'status', 'duration',
-        'recording_url', 'ai_transcription', 'ai_summary', 'ai_keywords',
+        'ringover_id', 'call_id', 'phone_number', 'contact_number',
+        'caller_name', 'contact_name', 'direction', 'status', 'duration',
+        'recording_url', 'voicemail_url', 'start_time', 'total_duration',
+        'incall_duration', 'ai_transcription', 'ai_summary', 'ai_keywords',
         'ai_sentiment', 'pipedrive_contact_id', 'pipedrive_deal_id'
     ];
-    
+
     protected array $casts = [
         'id' => 'int',
         'duration' => 'int',
+        'total_duration' => 'int',
+        'incall_duration' => 'int',
         'pipedrive_contact_id' => 'int',
         'pipedrive_deal_id' => 'int',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime'
+        'updated_at' => 'datetime',
+        'start_time' => 'datetime'
     ];
     
     /**

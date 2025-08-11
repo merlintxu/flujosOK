@@ -212,4 +212,54 @@ class CallRepositoryTest extends TestCase
         $this->assertCount(1, $pending);
         $this->assertSame(1, (int)$pending[0]['id']);
     }
+
+    public function testMarkCrmSyncedLogsEntry(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crm_synced INTEGER DEFAULT 0,
+            pipedrive_deal_id INTEGER
+        );");
+        $pdo->exec("CREATE TABLE crm_sync_logs (
+            call_id INTEGER,
+            result TEXT,
+            error_message TEXT,
+            created_at TEXT
+        );");
+        $pdo->exec("INSERT INTO calls (id, crm_synced) VALUES (1,0)");
+
+        $repo = $this->repo($pdo);
+        $repo->markCrmSynced(1, 99);
+
+        $synced = $pdo->query('SELECT crm_synced, pipedrive_deal_id FROM calls WHERE id=1')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(1, (int)$synced['crm_synced']);
+        $this->assertSame(99, (int)$synced['pipedrive_deal_id']);
+
+        $log = $pdo->query('SELECT call_id, result, error_message FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(1, (int)$log['call_id']);
+        $this->assertSame('success', $log['result']);
+        $this->assertNull($log['error_message']);
+    }
+
+    public function testLogCrmSyncStoresError(): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE TABLE crm_sync_logs (
+            call_id INTEGER,
+            result TEXT,
+            error_message TEXT,
+            created_at TEXT
+        );");
+
+        $repo = $this->repo($pdo);
+        $repo->logCrmSync(5, 'error', 'fail');
+
+        $row = $pdo->query('SELECT call_id, result, error_message FROM crm_sync_logs')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(5, (int)$row['call_id']);
+        $this->assertSame('error', $row['result']);
+        $this->assertSame('fail', $row['error_message']);
+    }
 }

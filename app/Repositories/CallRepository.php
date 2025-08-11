@@ -188,6 +188,22 @@ final class CallRepository
             'UPDATE calls SET crm_synced = 1, pipedrive_deal_id = :dealId WHERE id = :id'
         );
         $stmt->execute([':dealId' => $dealId, ':id' => $id]);
+
+        $this->logCrmSync($id, 'success');
+    }
+
+    /** Log a CRM sync attempt */
+    public function logCrmSync(int $callId, string $result, ?string $errorMessage = null): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO crm_sync_logs (call_id, result, error_message, created_at) VALUES (:call_id, :result, :error_message, :created_at)'
+        );
+        $stmt->execute([
+            ':call_id' => $callId,
+            ':result' => $result,
+            ':error_message' => $errorMessage,
+            ':created_at' => date('Y-m-d H:i:s'),
+        ]);
     }
 
     /** Aggregate global stats since the given date */
