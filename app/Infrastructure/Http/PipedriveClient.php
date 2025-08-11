@@ -26,7 +26,7 @@ final class PipedriveClient
                 'fields'    => 'phone',
                 'api_token' => $this->token,
             ],
-            'api_name'       => 'Pipedrive',
+            'service'        => 'Pipedrive',
             'batch_id'       => $batchId,
             'correlation_id' => $correlationId,
         ]);
@@ -48,7 +48,7 @@ final class PipedriveClient
                 'status'    => 'open',
                 'api_token' => $this->token,
             ],
-            'api_name'       => 'Pipedrive',
+            'service'        => 'Pipedrive',
             'batch_id'       => $batchId,
             'correlation_id' => $correlationId,
         ]);
@@ -74,7 +74,7 @@ final class PipedriveClient
                 'status'    => 'open',
                 'api_token' => $this->token,
             ],
-            'api_name'       => 'Pipedrive',
+            'service'        => 'Pipedrive',
             'batch_id'       => $batchId,
             'correlation_id' => $correlationId,
         ]);
@@ -95,7 +95,7 @@ final class PipedriveClient
         $resp = $this->http->request('POST', self::BASE . '/deals', [
             'query' => ['api_token' => $this->token],
             'json'  => $payload,
-            'api_name'       => 'Pipedrive',
+            'service'        => 'Pipedrive',
             'batch_id'       => $batchId,
             'correlation_id' => $correlationId,
         ]);

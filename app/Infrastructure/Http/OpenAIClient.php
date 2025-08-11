@@ -36,7 +36,7 @@ final class OpenAIClient
                 'Content-Type'  => 'application/json',
             ],
             'json' => ['model' => $this->model, 'messages' => $messages] + $extra,
-            'api_name'       => 'OpenAI',
+            'service'        => 'OpenAI',
             'batch_id'       => $batchId,
             'correlation_id' => $correlationId,
         ]);

@@ -52,7 +52,7 @@ final class RingoverClient
                     'start_date' => $since->format(DATE_ATOM),
                     'limit'      => 1,
                 ],
-                'api_name' => 'Ringover',
+                'service' => 'Ringover',
             ]);
             $code = $resp->getStatusCode();
             if ($code >= 200 && $code < 300) {
@@ -83,7 +83,7 @@ final class RingoverClient
                 'query'           => $query,
                 'timeout'         => 10,
                 'connect_timeout' => 5,
-                'api_name'        => 'Ringover',
+                'service'        => 'Ringover',
                 'batch_id'        => $batchId,
                 'correlation_id'  => $correlationId,
             ]);
@@ -181,7 +181,7 @@ final class RingoverClient
         $options = [
             'headers'         => ['Authorization' => $this->apiKey],
             'allow_redirects' => ['max' => 5, 'track_redirects' => true],
-            'api_name'        => 'Ringover',
+            'service'        => 'Ringover',
             'batch_id'        => $batchId,
             'correlation_id'  => $correlationId,
         ];
@@ -190,7 +190,7 @@ final class RingoverClient
         if (in_array($head->getStatusCode(), [401, 403], true)) {
             $head = $this->http->request('HEAD', $url, [
                 'allow_redirects' => ['max' => 5, 'track_redirects' => true],
-                'api_name'        => 'Ringover',
+                'service'        => 'Ringover',
                 'batch_id'        => $batchId,
                 'correlation_id'  => $correlationId,
             ]);
@@ -240,7 +240,7 @@ final class RingoverClient
         if (in_array($resp->getStatusCode(), [401, 403], true)) {
             $resp = $this->http->request('GET', $url, [
                 'allow_redirects' => ['max' => 5, 'track_redirects' => true],
-                'api_name'        => 'Ringover',
+                'service'        => 'Ringover',
                 'batch_id'        => $batchId,
                 'correlation_id'  => $correlationId,
             ]);
