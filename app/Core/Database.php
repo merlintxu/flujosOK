@@ -311,7 +311,7 @@ class Database
                     ai_summary TEXT,
                     ai_keywords TEXT,
                     ai_sentiment ENUM('positive', 'negative', 'neutral') DEFAULT 'neutral',
-                    pipedrive_contact_id INT,
+                    pipedrive_person_id INT,
                     pipedrive_deal_id INT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

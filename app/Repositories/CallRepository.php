@@ -120,6 +120,28 @@ final class CallRepository
         return (int)$stmt->rowCount();
     }
 
+    /** Fetch a call by its primary ID. */
+    public function find(int $id): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM calls WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row !== false ? $row : null;
+    }
+
+    /** Update Pipedrive identifiers for a call. */
+    public function updatePipedriveIds(int $id, ?int $personId, int $dealId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE calls SET pipedrive_person_id = :pid, pipedrive_deal_id = :did, crm_synced = 1 WHERE id = :id'
+        );
+        $stmt->execute([
+            ':pid' => $personId,
+            ':did' => $dealId,
+            ':id'  => $id,
+        ]);
+    }
+
     /**
      * Retrieve the internal ID for a given Ringover ID.
      */

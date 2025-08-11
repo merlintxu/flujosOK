@@ -22,7 +22,7 @@ class Call extends BaseModel
         'caller_name', 'contact_name', 'direction', 'status', 'duration',
         'recording_url', 'voicemail_url', 'start_time', 'total_duration',
         'incall_duration', 'ai_transcription', 'ai_summary', 'ai_keywords',
-        'ai_sentiment', 'pipedrive_contact_id', 'pipedrive_deal_id'
+        'ai_sentiment', 'pipedrive_person_id', 'pipedrive_deal_id'
     ];
 
     protected array $casts = [
@@ -30,7 +30,7 @@ class Call extends BaseModel
         'duration' => 'int',
         'total_duration' => 'int',
         'incall_duration' => 'int',
-        'pipedrive_contact_id' => 'int',
+        'pipedrive_person_id' => 'int',
         'pipedrive_deal_id' => 'int',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -362,7 +362,7 @@ class Call extends BaseModel
     public function linkToPipedrive(int $id, int $contactId): bool
     {
         $sql = "UPDATE {$this->table} 
-                SET pipedrive_contact_id = :contact_id, updated_at = NOW() 
+                SET pipedrive_person_id = :contact_id, updated_at = NOW()
                 WHERE id = :id";
         
         $stmt = $this->database->prepare($sql);

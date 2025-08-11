@@ -251,7 +251,7 @@ CREATE TABLE `calls` (
   `ai_summary` text DEFAULT NULL,
   `ai_keywords` text DEFAULT NULL,
   `ai_sentiment` enum('positive','negative','neutral') DEFAULT 'neutral',
-  `pipedrive_contact_id` int(11) DEFAULT NULL,
+  `pipedrive_person_id` int(11) DEFAULT NULL,
   `action_items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`action_items`)),
   `call_quality_score` decimal(4,3) DEFAULT NULL,
   `customer_satisfaction_score` decimal(4,3) DEFAULT NULL,
