@@ -50,7 +50,7 @@ class ControllerActionsTest extends TestCase
         $c->instance(Call::class, new CallModelStub());
         $controller = new CallsController($c, $this->request('POST','/api/v3/calls', []));
         $res = $controller->store();
-        $this->assertSame(400, $res->getStatusCode());
+        $this->assertSame(422, $res->getStatusCode());
         $data = json_decode($res->getContent(), true);
         $this->assertFalse($data['success']);
     }
@@ -60,7 +60,7 @@ class ControllerActionsTest extends TestCase
         $c = $this->container();
         $c->instance(Call::class, new CallModelStub());
         $controller = new CallsController($c, $this->request('POST','/api/v3/calls', [
-            'phone_number'=>'123','direction'=>'inbound','status'=>'answered','duration'=>5
+            'phone_number'=>'1234567890','direction'=>'inbound','status'=>'answered','duration'=>5
         ]));
         $res = $controller->store();
         $this->assertSame(201, $res->getStatusCode());

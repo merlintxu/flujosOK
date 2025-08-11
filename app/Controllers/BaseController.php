@@ -67,6 +67,35 @@ abstract class BaseController
         
         return $this->jsonResponse($response);
     }
+
+    /**
+     * Normalize and trim input strings. Phone fields are converted to E.164.
+     */
+    protected function normalizeInput(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $value = trim($value);
+                if (str_contains($key, 'phone')) {
+                    $value = $this->normalizePhone($value);
+                }
+                $data[$key] = $value;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Convert a phone number to E.164 format.
+     */
+    protected function normalizePhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+        return $digits !== '' ? '+' . $digits : '';
+    }
     
     /**
      * Validar datos de entrada

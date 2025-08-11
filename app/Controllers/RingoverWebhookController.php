@@ -5,6 +5,8 @@ namespace FlujosDimension\Controllers;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
+use FlujosDimension\DTO\AudioJobDTO;
+use FlujosDimension\Support\Validator;
 use PDO;
 
 /**
@@ -23,18 +25,27 @@ class RingoverWebhookController extends BaseController
                 return $this->errorResponse('Invalid signature', 401);
             }
 
-            $data = $this->request->getJsonBody() ?? [];
-            $this->validate($data, [
+            $data = $this->normalizeInput($this->request->getJsonBody() ?? []);
+            $dto  = new AudioJobDTO(
+                $data['call_id'] ?? '',
+                $data['recording_url'] ?? '',
+                isset($data['duration']) ? (int)$data['duration'] : 0
+            );
+
+            $errors = Validator::validate($dto->toArray(), [
                 'call_id' => 'required|string',
-                'recording_url' => 'required|string',
-                'duration' => 'required|integer',
+                'url'     => 'required|format:url',
+                'duration'=> 'required|integer',
             ]);
+            if ($errors) {
+                return $this->jsonResponse(['success' => false, 'errors' => $errors], 422);
+            }
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
             $storageDir   = dirname(__DIR__, 2) . '/storage';
             $recordingsDir = $storageDir . '/recordings';
-            $info = $ringover->downloadRecording($data['recording_url'], $recordingsDir);
+            $info = $ringover->downloadRecording($dto->url, $recordingsDir);
 
             /** @var CallRepository $repo */
             $repo = $this->service(CallRepository::class);
@@ -44,8 +55,8 @@ class RingoverWebhookController extends BaseController
             }
 
             $metadata = $info;
-            $metadata['url'] = $data['recording_url'];
-            $metadata['duration'] = (int)$data['duration'];
+            $metadata['url'] = $dto->url;
+            $metadata['duration'] = $dto->duration;
 
             $repo->addRecording($callId, $metadata);
 
@@ -73,18 +84,27 @@ class RingoverWebhookController extends BaseController
                 return $this->errorResponse('Invalid signature', 401);
             }
 
-            $data = $this->request->getJsonBody() ?? [];
-            $this->validate($data, [
+            $data = $this->normalizeInput($this->request->getJsonBody() ?? []);
+            $dto  = new AudioJobDTO(
+                $data['call_id'] ?? '',
+                $data['voicemail_url'] ?? '',
+                isset($data['duration']) ? (int)$data['duration'] : 0
+            );
+
+            $errors = Validator::validate($dto->toArray(), [
                 'call_id' => 'required|string',
-                'voicemail_url' => 'required|string',
-                'duration' => 'required|integer',
+                'url'     => 'required|format:url',
+                'duration'=> 'required|integer',
             ]);
+            if ($errors) {
+                return $this->jsonResponse(['success' => false, 'errors' => $errors], 422);
+            }
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
             $storageDir    = dirname(__DIR__, 2) . '/storage';
             $voicemailsDir = $storageDir . '/voicemails';
-            $info = $ringover->downloadVoicemail($data['voicemail_url'], $voicemailsDir);
+            $info = $ringover->downloadVoicemail($dto->url, $voicemailsDir);
 
             /** @var CallRepository $repo */
             $repo = $this->service(CallRepository::class);
@@ -94,8 +114,8 @@ class RingoverWebhookController extends BaseController
             }
 
             $metadata = $info;
-            $metadata['url'] = $data['voicemail_url'];
-            $metadata['duration'] = (int)$data['duration'];
+            $metadata['url'] = $dto->url;
+            $metadata['duration'] = $dto->duration;
 
             $repo->addRecording($callId, $metadata);
 
