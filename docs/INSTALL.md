@@ -8,10 +8,11 @@
    ```bash
 cp .env.example .env
 ```
-   Edit `.env` and configure the database variables:
-   `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`.
-   Add your API tokens as needed.
-   The value of `ADMIN_PASS` should be generated with `password_hash`.
+   Edit `.env` and configure the database variables (`DB_HOST`, `DB_PORT`,
+   `DB_NAME`, `DB_USER`, `DB_PASS`) and API credentials
+   `RINGOVER_API_KEY`, `PIPEDRIVE_API_TOKEN`, `OPENAI_API_KEY`.
+   Also set `JWT_SECRET`. The value of `ADMIN_PASS` should be generated
+   with `password_hash`.
 3. **Import the database schema** located in `database/flujodimen_db.sql` into your MySQL/MariaDB server. The
    `api_tokens` table now stores a `token_hash` column instead of the raw token.
 4. **Launch the built-in PHP web server** for local testing.

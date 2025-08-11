@@ -16,8 +16,9 @@ This project automates the synchronization of Ringover calls with OpenAI process
 ```bash
 composer install
 cp .env.example .env
-# Edit `.env` and set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASS`
-# along with your API credentials. The variable
+# Edit `.env` and set database values (`DB_HOST`, `DB_PORT`, `DB_NAME`,
+# `DB_USER`, `DB_PASS`) plus `RINGOVER_API_KEY`, `PIPEDRIVE_API_TOKEN`,
+# `OPENAI_API_KEY` and `JWT_SECRET`. The variable
 # `RINGOVER_MAX_RECORDING_MB` limits the size of downloaded
 # recordings (default 100).
 mkdir -p storage/recordings storage/voicemails

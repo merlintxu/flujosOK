@@ -10,7 +10,6 @@ namespace FlujosDimension\Core;
 class Config
 {
     private static $instance = null;
-    private $config = [];
     private $envLoaded = false;
     
     private function __construct()
@@ -62,12 +61,11 @@ class Config
                     // Establecer variable de entorno
                     putenv("$key=$value");
                     $_ENV[$key] = $value;
-                    $this->config[$key] = $value;
                 }
             }
             
             $this->envLoaded = true;
-            $this->logInfo("Environment variables loaded successfully. Total: " . count($this->config));
+            $this->logInfo("Environment variables loaded successfully. Total: " . count($_ENV));
             return true;
             
         } catch (Exception $e) {
@@ -81,20 +79,16 @@ class Config
      */
     public function get($key, $default = null)
     {
-        // Prioridad: config cargado > $_ENV > getenv() > default
-        if (isset($this->config[$key])) {
-            return $this->config[$key];
-        }
-        
+        // Prioridad: $_ENV > getenv() > default
         if (isset($_ENV[$key])) {
             return $_ENV[$key];
         }
-        
+
         $envValue = getenv($key);
         if ($envValue !== false) {
             return $envValue;
         }
-        
+
         return $default;
     }
     
@@ -103,7 +97,6 @@ class Config
      */
     public function set($key, $value)
     {
-        $this->config[$key] = $value;
         putenv("$key=$value");
         $_ENV[$key] = $value;
     }
@@ -113,7 +106,7 @@ class Config
      */
     public function has($key)
     {
-        return isset($this->config[$key]) || isset($_ENV[$key]) || getenv($key) !== false;
+        return isset($_ENV[$key]) || getenv($key) !== false;
     }
     
     /**
@@ -121,7 +114,7 @@ class Config
      */
     public function all()
     {
-        return array_merge($_ENV, $this->config);
+        return $_ENV;
     }
     
     /**
