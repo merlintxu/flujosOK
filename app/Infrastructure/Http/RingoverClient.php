@@ -52,6 +52,7 @@ final class RingoverClient
                     'start_date' => $since->format(DATE_ATOM),
                     'limit'      => 1,
                 ],
+                'api_name' => 'Ringover',
             ]);
             $code = $resp->getStatusCode();
             if ($code >= 200 && $code < 300) {
@@ -64,7 +65,7 @@ final class RingoverClient
     }
 
     /** @param array<string,mixed> $query */
-    private function request(string $method, string $uri, array $query = []): array
+    private function request(string $method, string $uri, array $query = [], ?string $batchId = null, ?string $correlationId = null): array
     {
         $now     = microtime(true);
         $elapsed = $now - $this->lastRequestAt;
@@ -82,6 +83,9 @@ final class RingoverClient
                 'query'           => $query,
                 'timeout'         => 10,
                 'connect_timeout' => 5,
+                'api_name'        => 'Ringover',
+                'batch_id'        => $batchId,
+                'correlation_id'  => $correlationId,
             ]);
             $status = $resp->getStatusCode();
 
@@ -114,7 +118,7 @@ final class RingoverClient
      *
      * @return Generator<int,array<string,mixed>>
      */
-    public function getCalls(DateTimeImmutable $since, bool $full = false, ?string $fields = null): Generator
+    public function getCalls(DateTimeImmutable $since, bool $full = false, ?string $fields = null, ?string $batchId = null): Generator
     {
         $since = $since->setTimezone(new DateTimeZone('UTC'));
 
@@ -136,7 +140,7 @@ final class RingoverClient
                 $query['fields'] = $fields;
             }
 
-            $body = $this->request('GET', "{$this->baseUrl}/calls", $query);
+            $body = $this->request('GET', "{$this->baseUrl}/calls", $query, $batchId);
             $data = $body['call_list'] ?? $body['data'] ?? [];
 
             if (empty($data)) {
@@ -166,7 +170,7 @@ final class RingoverClient
      * Download a recording URL into storage.
      * @return array{path:string,size:int,duration:int,format:string}
      */
-    public function downloadRecording(string $url, string $subdir = 'recordings'): array
+    public function downloadRecording(string $url, string $subdir = 'recordings', ?string $batchId = null, ?string $correlationId = null): array
     {
         if (str_contains($subdir, '/') || str_contains($subdir, '\\')) {
             $dir = $subdir;
@@ -177,11 +181,19 @@ final class RingoverClient
         $options = [
             'headers'         => ['Authorization' => $this->apiKey],
             'allow_redirects' => ['max' => 5, 'track_redirects' => true],
+            'api_name'        => 'Ringover',
+            'batch_id'        => $batchId,
+            'correlation_id'  => $correlationId,
         ];
 
         $head = $this->http->request('HEAD', $url, $options);
         if (in_array($head->getStatusCode(), [401, 403], true)) {
-            $head = $this->http->request('HEAD', $url, ['allow_redirects' => ['max' => 5, 'track_redirects' => true]]);
+            $head = $this->http->request('HEAD', $url, [
+                'allow_redirects' => ['max' => 5, 'track_redirects' => true],
+                'api_name'        => 'Ringover',
+                'batch_id'        => $batchId,
+                'correlation_id'  => $correlationId,
+            ]);
         }
 
         $status = $head->getStatusCode();
@@ -226,7 +238,12 @@ final class RingoverClient
 
         $resp = $this->http->request('GET', $url, $options);
         if (in_array($resp->getStatusCode(), [401, 403], true)) {
-            $resp = $this->http->request('GET', $url, ['allow_redirects' => ['max' => 5, 'track_redirects' => true]]);
+            $resp = $this->http->request('GET', $url, [
+                'allow_redirects' => ['max' => 5, 'track_redirects' => true],
+                'api_name'        => 'Ringover',
+                'batch_id'        => $batchId,
+                'correlation_id'  => $correlationId,
+            ]);
         }
         $status = $resp->getStatusCode();
         if ($status !== 200) {
@@ -269,9 +286,9 @@ final class RingoverClient
         ];
     }
 
-    public function downloadVoicemail(string $url, string $dir = 'voicemails'): array
+    public function downloadVoicemail(string $url, string $dir = 'voicemails', ?string $batchId = null, ?string $correlationId = null): array
     {
-        return $this->downloadRecording($url, $dir);
+        return $this->downloadRecording($url, $dir, $batchId, $correlationId);
     }
 }
 

@@ -28,7 +28,7 @@ final class OpenAIClient
      * @param array<string,mixed> $extra
      * @return array<string,mixed>
      */
-    public function chat(array $messages, array $extra = []): array
+    public function chat(array $messages, array $extra = [], ?string $batchId = null, ?string $correlationId = null): array
     {
         $resp = $this->http->request('POST', self::BASE . '/chat/completions', [
             'headers' => [
@@ -36,6 +36,9 @@ final class OpenAIClient
                 'Content-Type'  => 'application/json',
             ],
             'json' => ['model' => $this->model, 'messages' => $messages] + $extra,
+            'api_name'       => 'OpenAI',
+            'batch_id'       => $batchId,
+            'correlation_id' => $correlationId,
         ]);
 
         if ($resp->getStatusCode() !== 200) {

@@ -111,7 +111,13 @@ private function registerServices(): void
     /* ---------- HttpClient (Guzzle + retry) ---------- */
     $this->container->singleton(
         \FlujosDimension\Infrastructure\Http\HttpClient::class,
-        fn () => new \FlujosDimension\Infrastructure\Http\HttpClient()
+        fn ($c) => new \FlujosDimension\Infrastructure\Http\HttpClient(
+            [],
+            5,
+            500,
+            $c->resolve(PDO::class),
+            $c->resolve('logger')
+        )
     );
     // Alias corto por si te resulta práctico
     $this->container->alias(

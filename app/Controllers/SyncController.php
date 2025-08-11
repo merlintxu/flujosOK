@@ -38,9 +38,19 @@ class SyncController extends BaseController
             $since = $history->getLastSyncedAt() ?? new \DateTimeImmutable('-1 hour');
             $last   = $since;
             $inserted = 0;
-            foreach ($ringover->getCalls($since) as $call) {
-                $mapped = $ringover->mapCallFields($call);
+            $batchId = bin2hex(random_bytes(16));
+            foreach ($ringover->getCalls($since, false, null, $batchId) as $call) {
+                $correlationId = bin2hex(random_bytes(16));
+                $mapped = $ringover->mapCallFields($call) + [
+                    'batch_id'       => $batchId,
+                    'correlation_id' => $correlationId,
+                ];
                 $repo->insertOrIgnore($mapped);
+                $this->logger->info('call_synced', [
+                    'batch_id' => $batchId,
+                    'correlation_id' => $correlationId,
+                    'call_id' => $mapped['call_id'] ?? null,
+                ]);
                 $inserted++;
                 $callTime = isset($mapped['start_time']) ? new \DateTimeImmutable($mapped['start_time']) : $since;
                 if ($callTime > $last) {
@@ -79,6 +89,7 @@ class SyncController extends BaseController
             $sinceParam = $this->request->get('since');
             $since = $sinceParam ? new \DateTimeImmutable($sinceParam) : ($history->getLastSyncedAt() ?? new \DateTimeImmutable('-1 day'));
             $last = $since;
+            $batchId = bin2hex(random_bytes(16));
 
             /** @var RingoverService $ringover */
             $ringover = $this->service(RingoverService::class);
@@ -86,9 +97,18 @@ class SyncController extends BaseController
             $repo     = $this->service('callRepository');
 
             $inserted = 0;
-            foreach ($ringover->getCalls($since) as $call) {
-                $mapped = $ringover->mapCallFields($call);
+            foreach ($ringover->getCalls($since, false, null, $batchId) as $call) {
+                $correlationId = bin2hex(random_bytes(16));
+                $mapped = $ringover->mapCallFields($call) + [
+                    'batch_id'       => $batchId,
+                    'correlation_id' => $correlationId,
+                ];
                 $repo->insertOrIgnore($mapped);
+                $this->logger->info('call_synced', [
+                    'batch_id' => $batchId,
+                    'correlation_id' => $correlationId,
+                    'call_id' => $mapped['call_id'] ?? null,
+                ]);
                 $inserted++;
                 $callTime = isset($mapped['start_time']) ? new \DateTimeImmutable($mapped['start_time']) : $since;
                 if ($callTime > $last) {

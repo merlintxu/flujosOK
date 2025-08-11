@@ -17,7 +17,7 @@ final class PipedriveClient
         private readonly string $token
     ) {}
 
-    public function findPersonByPhone(string $phone): ?int
+    public function findPersonByPhone(string $phone, ?string $batchId = null, ?string $correlationId = null): ?int
     {
         $resp = $this->http->request('GET', self::BASE . '/persons/search', [
             'query' => [
@@ -26,6 +26,9 @@ final class PipedriveClient
                 'fields'    => 'phone',
                 'api_token' => $this->token,
             ],
+            'api_name'       => 'Pipedrive',
+            'batch_id'       => $batchId,
+            'correlation_id' => $correlationId,
         ]);
 
         if ($resp->getStatusCode() !== 200) {
@@ -36,7 +39,7 @@ final class PipedriveClient
         return $data['data']['items'][0]['item']['id'] ?? null;
     }
 
-    public function findOpenDeal(string $callId, ?string $phone = null): ?int
+    public function findOpenDeal(string $callId, ?string $phone = null, ?string $batchId = null, ?string $correlationId = null): ?int
     {
         $resp = $this->http->request('GET', self::BASE . '/deals/search', [
             'query' => [
@@ -45,6 +48,9 @@ final class PipedriveClient
                 'status'    => 'open',
                 'api_token' => $this->token,
             ],
+            'api_name'       => 'Pipedrive',
+            'batch_id'       => $batchId,
+            'correlation_id' => $correlationId,
         ]);
 
         if ($resp->getStatusCode() !== 200) {
@@ -68,6 +74,9 @@ final class PipedriveClient
                 'status'    => 'open',
                 'api_token' => $this->token,
             ],
+            'api_name'       => 'Pipedrive',
+            'batch_id'       => $batchId,
+            'correlation_id' => $correlationId,
         ]);
 
         if ($resp->getStatusCode() !== 200) {
@@ -81,11 +90,14 @@ final class PipedriveClient
     /**
      * Create or update a deal and return its ID.
      */
-    public function createOrUpdateDeal(array $payload): int
+    public function createOrUpdateDeal(array $payload, ?string $batchId = null, ?string $correlationId = null): int
     {
         $resp = $this->http->request('POST', self::BASE . '/deals', [
             'query' => ['api_token' => $this->token],
             'json'  => $payload,
+            'api_name'       => 'Pipedrive',
+            'batch_id'       => $batchId,
+            'correlation_id' => $correlationId,
         ]);
 
         if ($resp->getStatusCode() !== 201) {

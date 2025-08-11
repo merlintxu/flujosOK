@@ -24,9 +24,9 @@ class CallService
      *
      * @return Generator<int,array<string,mixed>>
      */
-    public function getCalls(\DateTimeInterface $since, bool $full = false, ?string $fields = null): Generator
+    public function getCalls(\DateTimeInterface $since, bool $full = false, ?string $fields = null, ?string $batchId = null): Generator
     {
-        foreach ($this->client->getCalls($since, $full, $fields) as $call) {
+        foreach ($this->client->getCalls($since, $full, $fields, $batchId) as $call) {
             yield $this->mapCallFields($call);
         }
     }
