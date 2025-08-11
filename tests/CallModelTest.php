@@ -27,7 +27,7 @@ class CallModelTest extends TestCase
                 ai_summary TEXT,
                 ai_keywords TEXT,
                 ai_sentiment TEXT,
-                pipedrive_contact_id INTEGER,
+                pipedrive_person_id INTEGER,
                 pipedrive_deal_id INTEGER,
                 created_at TEXT,
                 updated_at TEXT
@@ -49,7 +49,7 @@ class CallModelTest extends TestCase
             'direction' => 'inbound',
             'status' => 'answered',
             'duration' => 30,
-            'pipedrive_contact_id' => 11,
+            'pipedrive_person_id' => 11,
             'pipedrive_deal_id' => 22
         ]);
 

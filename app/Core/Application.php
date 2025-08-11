@@ -195,7 +195,8 @@ private function registerServices(): void
     $this->container->singleton(
         \FlujosDimension\Services\CRMService::class,
         fn ($c) => new \FlujosDimension\Services\CRMService(
-            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class)
+            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class),
+            $c->resolve('callRepository')
         )
     );
     $this->container->alias(\FlujosDimension\Services\CRMService::class, \FlujosDimension\Services\PipedriveService::class);
