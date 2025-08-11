@@ -5,7 +5,6 @@ use PHPUnit\Framework\TestCase;
 use FlujosDimension\Core\Container;
 use FlujosDimension\Core\Request;
 use FlujosDimension\Controllers\RingoverWebhookController;
-use FlujosDimension\Services\RingoverService;
 use PDO;
 
 class RingoverWebhookControllerTest extends TestCase
@@ -16,7 +15,7 @@ class RingoverWebhookControllerTest extends TestCase
         $c->instance('logger', new class { public function error(...$a){} public function info(...$a){} });
         $c->instance('config', ['RINGOVER_WEBHOOK_SECRET' => $secret]);
         $c->instance('database', $pdo);
-        $c->instance(\FlujosDimension\Repositories\CallRepository::class, new \FlujosDimension\Repositories\CallRepository($pdo));
+        $c->instance(\FlujosDimension\Repositories\AsyncTaskRepository::class, new \FlujosDimension\Repositories\AsyncTaskRepository($pdo));
         return $c;
     }
 
@@ -32,54 +31,36 @@ class RingoverWebhookControllerTest extends TestCase
         return new Request($body);
     }
 
-    public function testRecordAvailableStoresMetadata(): void
+    public function testRecordAvailableQueuesJob(): void
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ringover_id TEXT, recording_url TEXT, recording_path TEXT, has_recording INTEGER DEFAULT 0);");
-        $pdo->exec("CREATE TABLE call_recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, call_id INTEGER, file_path TEXT, file_size INTEGER, duration INTEGER, format TEXT);");
-        $pdo->exec("INSERT INTO calls (ringover_id) VALUES ('r1')");
+        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, scheduled_at TEXT, created_at TEXT);");
 
         $secret = 'topsecret';
         $body = json_encode(['call_id' => 'r1', 'recording_url' => 'http://example.com/a.mp3', 'duration' => 5]);
         $sig = hash_hmac('sha256', $body, $secret);
 
         $c = $this->container($pdo, $secret);
-        $c->instance(RingoverService::class, new class extends RingoverService {
-            public function __construct(){}
-            public function downloadRecording(string $url, string $dir = 'storage/recordings'): array
-            {
-                if (!is_dir($dir)) { mkdir($dir, 0755, true); }
-                $path = $dir . '/test.mp3';
-                file_put_contents($path, 'data');
-                return ['path' => $path, 'size' => 4, 'duration' => 0, 'format' => 'mp3'];
-            }
-        });
 
         $controller = new RingoverWebhookController($c, $this->request('POST', '/api/v3/webhooks/ringover/record-available', $body, $sig));
         $resp = $controller->recordAvailable();
         $this->assertSame(200, $resp->getStatusCode());
         $data = json_decode($resp->getContent(), true);
         $this->assertTrue($data['success']);
-        $this->assertNotEmpty($data['data']['path']);
-        $this->assertGreaterThan(0, $data['data']['recording_id']);
+        $this->assertTrue($data['data']['queued']);
 
-        $call = $pdo->query("SELECT recording_url, recording_path, has_recording FROM calls WHERE ringover_id='r1'")->fetch();
-        $this->assertSame('http://example.com/a.mp3', $call['recording_url']);
-        $this->assertNotEmpty($call['recording_path']);
-        $this->assertSame(1, (int)$call['has_recording']);
-
-        $rec = $pdo->query('SELECT file_path, duration FROM call_recordings')->fetch(PDO::FETCH_ASSOC);
-        $this->assertSame($data['data']['path'], $rec['file_path']);
-        $this->assertSame(5, (int)$rec['duration']);
+        $row = $pdo->query('SELECT task_type, task_data FROM async_tasks')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(\FlujosDimension\Jobs\DownloadRecordingJob::class, $row['task_type']);
+        $payload = json_decode($row['task_data'], true);
+        $this->assertSame('r1', $payload['call_id']);
     }
 
     public function testInvalidSignatureRejected(): void
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE TABLE calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ringover_id TEXT);");
-        $pdo->exec("CREATE TABLE call_recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, call_id INTEGER, file_path TEXT, file_size INTEGER, duration INTEGER, format TEXT);");
+        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, scheduled_at TEXT, created_at TEXT);");
 
         $secret = 'abc';
         $body = json_encode(['call_id' => 'r1', 'recording_url' => 'http://e/a.mp3']);
