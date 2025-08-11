@@ -1,0 +1,16 @@
+{
+  "name": "Call Summary to Pipedrive",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [240, 300]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {},
+  "versionId": "00000000-0000-0000-0000-000000000001"
+}
