@@ -310,6 +310,7 @@ private function registerServices(): void
                 $router->post('/calls', 'CallsController@store');
                 $router->put('/calls/{id}', 'CallsController@update');
                 $router->delete('/calls/{id}', 'CallsController@destroy');
+                $router->get('/calls/{id}/summary', 'N8nController@getSummary');
 
                 // Analysis
                 $router->post('/analysis/process', 'AnalysisController@process');

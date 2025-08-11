@@ -174,7 +174,7 @@ abstract class BaseController
         $authHeader = $this->request->getHeader('Authorization');
         
         if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
-            throw new \UnauthorizedHttpException('Authorization token required');
+            throw new UnauthorizedHttpException('Authorization token required');
         }
         
         $token = substr($authHeader, 7);
@@ -183,7 +183,7 @@ abstract class BaseController
             $jwtService = $this->container->resolve('jwtService');
             return $jwtService->validateToken($token);
         } catch (\Exception $e) {
-            throw new \UnauthorizedHttpException('Invalid or expired token');
+            throw new UnauthorizedHttpException('Invalid or expired token');
         }
     }
     
@@ -325,11 +325,11 @@ abstract class BaseController
         $status = 500;
         if ($e instanceof \InvalidArgumentException) {
             $status = 400;
-        } elseif ($e instanceof \UnauthorizedHttpException) {
+        } elseif ($e instanceof UnauthorizedHttpException) {
             $status = 401;
-        } elseif ($e instanceof \ForbiddenHttpException) {
+        } elseif ($e instanceof ForbiddenHttpException) {
             $status = 403;
-        } elseif ($e instanceof \NotFoundHttpException) {
+        } elseif ($e instanceof NotFoundHttpException) {
             $status = 404;
         }
         
