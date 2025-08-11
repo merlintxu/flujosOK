@@ -1,28 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
-         colors="true">
-    <testsuites>
-        <testsuite name="default">
-            <directory>tests</directory>
-        </testsuite>
-    </testsuites>
-    <coverage>
-        <include>
-            <directory>app</directory>
-        </include>
-        <exclude>
-            <directory>tests</directory>
-        </exclude>
-    </coverage>
-    <php>
-        <env name="DB_HOST" value="localhost"/>
-        <env name="DB_NAME" value="testdb"/>
-        <env name="DB_USER" value="user"/>
-        <env name="DB_PASS" value="pass"/>
-        <env name="ADMIN_USER" value="admin"/>
-        <env name="ADMIN_PASS" value="secret"/>
-        <env name="JWT_SECRET" value="key"/>
-    </php>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true">
+  <testsuites>
+    <testsuite name="default">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+  <php>
+    <env name="DB_HOST" value="localhost"/>
+    <env name="DB_NAME" value="testdb"/>
+    <env name="DB_USER" value="user"/>
+    <env name="DB_PASS" value="pass"/>
+    <env name="ADMIN_USER" value="admin"/>
+    <env name="ADMIN_PASS" value="secret"/>
+    <env name="JWT_SECRET" value="key"/>
+  </php>
+  <source>
+    <include>
+      <directory>app</directory>
+    </include>
+    <exclude>
+      <directory>tests</directory>
+    </exclude>
+  </source>
 </phpunit>
