@@ -381,28 +381,4 @@ final class CallRepository
             ':id' => $callId
         ]);
     }
-
-    /**
-     * Find call ID by Ringover ID
-     */
-    public function findIdByRingoverId(string $ringoverId): ?int
-    {
-        $stmt = $this->db->prepare('SELECT id FROM calls WHERE ringover_id = :ringover_id LIMIT 1');
-        $stmt->execute([':ringover_id' => $ringoverId]);
-        
-        $result = $stmt->fetchColumn();
-        return $result !== false ? (int)$result : null;
-    }
-
-    /**
-     * Find a call by ID
-     */
-    public function find(int $id): ?array
-    {
-        $stmt = $this->db->prepare('SELECT * FROM calls WHERE id = :id LIMIT 1');
-        $stmt->execute([':id' => $id]);
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result !== false ? $result : null;
-    }
 }
