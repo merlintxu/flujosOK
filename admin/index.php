@@ -15,6 +15,8 @@ requireLogin();
 $action = $_GET['action'] ?? '';
 if ($action === 'env_editor') {
     $config = \FlujosDimension\Core\Config::getInstance();
+    $success = null;
+    $error = null;
     (new class($config) {
         public $config;
         public function __construct($config) { $this->config = $config; }

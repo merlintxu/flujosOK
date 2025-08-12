@@ -141,8 +141,8 @@ final class HttpClient
             ], JSON_UNESCAPED_UNICODE);
 
             $stmt = $this->db->prepare(
-                'INSERT INTO api_monitoring (service, request_path, method, response_time, status_code, success, correlation_id, error_message)'
-                . ' VALUES (:service, :request_path, :method, :response_time, :status_code, :success, :correlation_id, :error_message)'
+                'INSERT INTO api_monitoring (service, request_path, method, response_time, status_code, success, correlation_id, error_message, timestamp)'
+                . ' VALUES (:service, :request_path, :method, :response_time, :status_code, :success, :correlation_id, :error_message, NOW())'
             );
             $stmt->execute([
                 ':service'       => $service,

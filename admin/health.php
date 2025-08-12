@@ -36,12 +36,13 @@ $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS'], [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
 ]);
 
-// Gather metrics for the last hour per service
+// Gather metrics for the last hour
 $sql = "SELECT service,
+               COUNT(*) AS total_requests,
                AVG(response_time) AS avg_latency,
-               PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time) AS p95_latency,
+               (SELECT response_time FROM api_monitoring am2 WHERE am2.service = am1.service ORDER BY response_time DESC LIMIT 1 OFFSET FLOOR(COUNT(*) * 0.05)) AS p95_latency,
                SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS error_rate
-        FROM api_monitoring
+        FROM api_monitoring am1
         WHERE timestamp >= NOW() - INTERVAL 1 HOUR
         GROUP BY service";
 $metrics = $pdo->query($sql)->fetchAll();
