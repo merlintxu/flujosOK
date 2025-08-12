@@ -57,10 +57,16 @@ final class RingoverClient
         try {
             $response = $this->http->get($this->baseUrl . '/calls', [
                 'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
-                'query' => ['limit' => 1]
+                'query' => ['limit' => 1],
+                'service' => 'ringover'
             ]);
             
-            return ['success' => true];
+            $statusCode = $response->getStatusCode();
+            if ($statusCode >= 200 && $statusCode < 300) {
+                return ['success' => true];
+            } else {
+                return ['success' => false, 'message' => "HTTP {$statusCode}"];
+            }
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -91,10 +97,23 @@ final class RingoverClient
             
             $response = $this->http->get($this->baseUrl . '/calls', [
                 'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
-                'query' => $query
+                'query' => $query,
+                'service' => 'ringover',
+                'correlation_id' => $batchId
             ]);
 
-            $data = json_decode($response, true);
+            $statusCode = $response->getStatusCode();
+            if ($statusCode < 200 || $statusCode >= 300) {
+                throw new \RuntimeException("Ringover API error: HTTP {$statusCode}");
+            }
+
+            $body = $this->http->getBodyAsString($response);
+            $data = json_decode($body, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \RuntimeException('Invalid JSON response from Ringover API');
+            }
+            
             $calls = $data['data'] ?? [];
 
             foreach ($calls as $call) {
@@ -131,9 +150,16 @@ final class RingoverClient
     private function downloadMedia(string $url, string $subdir): array
     {
         $response = $this->http->get($url, [
-            'headers' => ['Authorization' => 'Bearer ' . $this->apiKey]
+            'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+            'service' => 'ringover'
         ]);
 
+        $statusCode = $response->getStatusCode();
+        if ($statusCode < 200 || $statusCode >= 300) {
+            throw new \RuntimeException("Failed to download media: HTTP {$statusCode}");
+        }
+
+        $body = $this->http->getBodyAsString($response);
         $filename = basename(parse_url($url, PHP_URL_PATH)) ?: 'media_' . time();
         $dir = __DIR__ . '/../../../storage/' . $subdir;
         
@@ -142,7 +168,7 @@ final class RingoverClient
         }
 
         $path = $dir . '/' . $filename;
-        file_put_contents($path, $response);
+        file_put_contents($path, $body);
 
         return [
             'path' => $path,

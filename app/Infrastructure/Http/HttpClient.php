@@ -253,4 +253,68 @@ final class HttpClient
             $this->rateLimiter->reset($key);
         }
     }
+
+    /**
+     * Convenience method for GET requests
+     */
+    public function get(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->request('GET', $uri, $options);
+    }
+
+    /**
+     * Convenience method for POST requests
+     */
+    public function post(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->request('POST', $uri, $options);
+    }
+
+    /**
+     * Convenience method for PUT requests
+     */
+    public function put(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->request('PUT', $uri, $options);
+    }
+
+    /**
+     * Convenience method for DELETE requests
+     */
+    public function delete(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->request('DELETE', $uri, $options);
+    }
+
+    /**
+     * Convenience method for PATCH requests
+     */
+    public function patch(string $uri, array $options = []): ResponseInterface
+    {
+        return $this->request('PATCH', $uri, $options);
+    }
+
+    /**
+     * Get response body as string
+     */
+    public function getBodyAsString(ResponseInterface $response): string
+    {
+        return (string)$response->getBody();
+    }
+
+    /**
+     * Get response body as JSON array
+     */
+    public function getBodyAsJson(ResponseInterface $response): array
+    {
+        $body = $this->getBodyAsString($response);
+        $decoded = json_decode($body, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+        }
+        
+        return $decoded ?? [];
+    }
 }
+
