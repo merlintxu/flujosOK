@@ -48,31 +48,50 @@ class CallService
 
         $lastState = $call['last_state'] ?? ($call['status'] ?? null);
         $answered  = $call['is_answered'] ?? null;
-        $status    = $lastState;
-        if ($status !== null && !in_array($status, ['busy', 'failed', 'answered', 'missed'], true)) {
-            $status = null;
-        }
-        if ($status === null && $answered !== null) {
-            $status = $answered ? 'answered' : 'missed';
+        
+        // Map Ringover states to internal status
+        $status = match ($lastState) {
+            'MISSED' => 'missed',
+            'CANCELLED' => 'missed',
+            'VOICEMAIL' => 'missed',
+            'ANSWERED' => 'answered',
+            'BUSY' => 'busy',
+            'FAILED' => 'failed',
+            default => $answered ? 'answered' : 'missed',
+        };
+
+        // Determine phone numbers based on direction
+        $phoneNumber = $direction === 'inbound' 
+            ? ($call['from_number'] ?? null)
+            : ($call['to_number'] ?? null);
+        
+        $contactNumber = $call['contact_number'] ?? null;
+
+        // Extract contact name from contact object if available
+        $contactName = null;
+        if (isset($call['contact']) && is_array($call['contact'])) {
+            $contactName = $call['contact']['concat_name'] ?? 
+                          ($call['contact']['firstname'] ?? '') . ' ' . ($call['contact']['lastname'] ?? '');
+            $contactName = trim($contactName) ?: null;
         }
 
         $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
 
         return [
-            'ringover_id' => $call['cdr_id'] ?? $call['ringover_id'] ?? null,
-            'call_id'        => $call['call_id']       ?? null,
-            'phone_number'   => $call['from_number']   ?? null,
-            'contact_number' => $call['contact_number']?? null,
-            'caller_name'    => $call['from_name']     ?? ($call['caller_name']     ?? null),
-            'contact_name'   => $call['to_name']       ?? ($call['contact_name']    ?? null),
+            'ringover_id'    => $call['cdr_id'] ?? $call['ringover_id'] ?? null,
+            'call_id'        => $call['call_id'] ?? null,
+            'phone_number'   => $phoneNumber,
+            'contact_number' => $contactNumber,
+            'caller_name'    => $call['from_name'] ?? ($call['caller_name'] ?? null),
+            'contact_name'   => $contactName,
             'direction'      => $direction,
-            'start_time'     => $call['call_start']    ?? ($call['start_time']      ?? ($call['started_at'] ?? null)),
-            'total_duration' => $call['total_duration']?? null,
+            'start_time'     => $call['start_time'] ?? ($call['started_at'] ?? null),
+            'total_duration' => $call['total_duration'] ?? null,
             'incall_duration'=> $call['incall_duration'] ?? null,
             'status'         => $status,
             'duration'       => $duration,
-            'recording_url'  => $call['record']       ?? null,
-            'voicemail_url'  => $call['voicemail']    ?? null,
+            'recording_url'  => $call['record'] ?? null,
+            'voicemail_url'  => $call['voicemail'] ?? null,
         ];
     }
 
@@ -90,3 +109,5 @@ class CallService
         return $this->client->downloadVoicemail($url, $dir);
     }
 }
+
+
