@@ -44,14 +44,12 @@ CREATE EVENT IF NOT EXISTS cleanup_rate_limit_logs
 ON SCHEDULE EVERY 1 DAY
 DO DELETE FROM rate_limit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
 
--- Insert default rate limit configurations
-INSERT IGNORE INTO rate_limit_config (service_name, endpoint, max_requests, window_seconds, created_at) VALUES
-('openai', 'transcribe', 50, 3600, NOW()),
-('openai', 'chat', 100, 3600, NOW()),
-('pipedrive', 'api', 200, 3600, NOW()),
-('ringover', 'api', 300, 3600, NOW()),
-('ringover', 'download', 20, 3600, NOW()),
-('default', '*', 100, 3600, NOW());
+-- Insert default rate limit configurations (corrected for real table structure)
+INSERT IGNORE INTO rate_limit_config (service_name, max_requests_per_minute, max_requests_per_hour, backoff_base_delay, backoff_multiplier, max_retries, max_backoff_delay, created_at) VALUES
+('openai', 10, 50, 1, 2.00, 3, 60, NOW()),
+('pipedrive', 30, 200, 1, 2.00, 3, 60, NOW()),
+('ringover', 50, 300, 1, 2.00, 3, 60, NOW()),
+('default', 20, 100, 1, 2.00, 3, 60, NOW());
 
 -- Add comment to document the purpose
 ALTER TABLE rate_limit_buckets COMMENT = 'Rate limiting buckets using token bucket algorithm - v4.2';
