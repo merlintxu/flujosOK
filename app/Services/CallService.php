@@ -59,7 +59,7 @@ class CallService
         $duration = $call['incall_duration'] ?? ($call['total_duration'] ?? null);
 
         return [
-            'ringover_id'    => $call['cdr_id']        ?? null,
+            'ringover_id' => $call['cdr_id'] ?? $call['ringover_id'] ?? null,
             'call_id'        => $call['call_id']       ?? null,
             'phone_number'   => $call['from_number']   ?? null,
             'contact_number' => $call['contact_number']?? null,
