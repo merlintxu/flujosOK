@@ -56,7 +56,7 @@ final class RingoverClient
     {
         try {
             $response = $this->http->get($this->baseUrl . '/calls', [
-                'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+                'headers' => ['Authorization' => $this->apiKey],
                 'query' => ['limit' => 1],
                 'service' => 'ringover'
             ]);
@@ -80,7 +80,7 @@ final class RingoverClient
     public function getCalls(\DateTimeInterface $since, bool $full = false, ?string $fields = null, ?string $batchId = null): Generator
     {
         $query = [
-            'start_date' => $since->format('Y-m-d H:i:s'),
+            'since' => $since->format(\DateTimeInterface::ATOM),
             'limit' => 100
         ];
 
@@ -96,7 +96,7 @@ final class RingoverClient
             $query['offset'] = $offset;
             
             $response = $this->http->get($this->baseUrl . '/calls', [
-                'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+                'headers' => ['Authorization' => $this->apiKey],
                 'query' => $query,
                 'service' => 'ringover',
                 'correlation_id' => $batchId
@@ -150,7 +150,7 @@ final class RingoverClient
     private function downloadMedia(string $url, string $subdir): array
     {
         $response = $this->http->get($url, [
-            'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+            'headers' => ['Authorization' => $this->apiKey],
             'service' => 'ringover'
         ]);
 
