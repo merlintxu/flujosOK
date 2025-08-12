@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use FlujosDimension\Core\Container;
 use FlujosDimension\Services\PipedriveService;
 use FlujosDimension\Repositories\CallRepository;
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 
 class AdminApiTest extends TestCase
 {
@@ -35,12 +35,12 @@ class AdminApiTest extends TestCase
         });
         $this->container->alias(PipedriveService::class, 'pipedriveService');
 
-        $this->container->instance(CallService::class, new class {
+        $this->container->instance(RingoverService::class, new class {
             public function getCalls($since){ return [['ringover_id' => 'r1', 'recording_url'=>null]]; }
             public function downloadRecording($url, $subdir = 'recordings'){ return ['path'=>'', 'size'=>0, 'duration'=>0, 'format'=>'mp3']; }
             public function mapCallFields($call){ return $call; }
         });
-        $this->container->alias(CallService::class, 'ringoverService');
+        $this->container->alias(RingoverService::class, 'ringoverService');
 
         $this->container->instance('jwtService', new class {
             public function generateToken(array $payload){ return 'tok123'; }

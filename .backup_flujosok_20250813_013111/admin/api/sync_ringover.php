@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/init.php';
 
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Core\Request;
 
@@ -86,8 +86,8 @@ writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process', [
 ]);
 
 // Inicializa servicios y registra en el log
-/** @var CallService $ringoverService */
-$ringoverService = $container->resolve(CallService::class);
+/** @var RingoverService $ringoverService */
+$ringoverService = $container->resolve(RingoverService::class);
 /** @var CallRepository $repo */
 $repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');

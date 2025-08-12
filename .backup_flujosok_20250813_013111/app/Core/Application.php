@@ -207,7 +207,7 @@ private function registerServices(): void
             $c->resolve(\FlujosDimension\Infrastructure\Http\RingoverClient::class)
         )
     );
-    $this->container->alias(\FlujosDimension\Services\CallService::class, \FlujosDimension\Services\CallService::class);
+    $this->container->alias(\FlujosDimension\Services\CallService::class, \FlujosDimension\Services\RingoverService::class);
     $this->container->alias(\FlujosDimension\Services\CallService::class, 'ringoverService');
 
     $this->container->singleton(

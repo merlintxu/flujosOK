@@ -3,7 +3,7 @@
 namespace FlujosDimension\Controllers;
 
 use FlujosDimension\Core\Response;
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Services\AnalyticsService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Repositories\SyncHistoryRepository;
@@ -19,14 +19,14 @@ class SyncController extends BaseController
     public function hourly(): Response
     {
         try {
-            if (!$this->container->bound(CallService::class)
+            if (!$this->container->bound(RingoverService::class)
                 || !$this->container->bound('callRepository')
                 || !$this->container->bound('syncHistoryRepository')) {
                 return $this->successResponse(['inserted' => 0]);
             }
 
-            /** @var CallService $ringover */
-            $ringover = $this->service(CallService::class);
+            /** @var RingoverService $ringover */
+            $ringover = $this->service(RingoverService::class);
             /** @var CallRepository $repo */
             $repo     = $this->service('callRepository');
             /** @var AnalyticsService $analytics */
@@ -79,7 +79,7 @@ class SyncController extends BaseController
     public function manual(): Response
     {
         try {
-            if (!$this->container->bound(CallService::class)
+            if (!$this->container->bound(RingoverService::class)
                 || !$this->container->bound('callRepository')
                 || !$this->container->bound('syncHistoryRepository')) {
                 return $this->successResponse(['inserted' => 0]);
@@ -91,8 +91,8 @@ class SyncController extends BaseController
             $last = $since;
             $batchId = bin2hex(random_bytes(16));
 
-            /** @var CallService $ringover */
-            $ringover = $this->service(CallService::class);
+            /** @var RingoverService $ringover */
+            $ringover = $this->service(RingoverService::class);
             /** @var CallRepository $repo */
             $repo     = $this->service('callRepository');
 
