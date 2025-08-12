@@ -320,4 +320,89 @@ final class CallRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Save transcription data to the transcriptions table
+     */
+    public function saveTranscription(int $callId, array $transcriptionData): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO transcriptions (call_id, original_text, processed_text, confidence_score, language, processing_time, correlation_id, created_at) 
+             VALUES (:call_id, :original_text, :processed_text, :confidence_score, :language, :processing_time, :correlation_id, :created_at)'
+        );
+        
+        $stmt->execute([
+            ':call_id' => $callId,
+            ':original_text' => $transcriptionData['original_text'] ?? null,
+            ':processed_text' => $transcriptionData['processed_text'] ?? null,
+            ':confidence_score' => $transcriptionData['confidence_score'] ?? null,
+            ':language' => $transcriptionData['language'] ?? 'es',
+            ':processing_time' => $transcriptionData['processing_time'] ?? null,
+            ':correlation_id' => $transcriptionData['correlation_id'] ?? null,
+            ':created_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+
+    /**
+     * Update call with analysis results
+     */
+    public function updateAnalysis(int $callId, array $analysisData): void
+    {
+        $fields = [];
+        $params = [':id' => $callId];
+        
+        foreach ($analysisData as $field => $value) {
+            $fields[] = "{$field} = :{$field}";
+            $params[":{$field}"] = $value;
+        }
+        
+        if (empty($fields)) {
+            return;
+        }
+        
+        $sql = 'UPDATE calls SET ' . implode(', ', $fields) . ' WHERE id = :id';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    /**
+     * Save structured notes as JSON in a separate field or table
+     */
+    public function saveStructuredNotes(int $callId, array $notasEstructuradas): void
+    {
+        // For now, we'll save it in the analysis field as part of the JSON
+        // In the future, this could be moved to a separate table for better querying
+        $stmt = $this->db->prepare(
+            'UPDATE calls SET action_items = :structured_notes WHERE id = :id'
+        );
+        
+        $stmt->execute([
+            ':structured_notes' => json_encode($notasEstructuradas, JSON_UNESCAPED_UNICODE),
+            ':id' => $callId
+        ]);
+    }
+
+    /**
+     * Find call ID by Ringover ID
+     */
+    public function findIdByRingoverId(string $ringoverId): ?int
+    {
+        $stmt = $this->db->prepare('SELECT id FROM calls WHERE ringover_id = :ringover_id LIMIT 1');
+        $stmt->execute([':ringover_id' => $ringoverId]);
+        
+        $result = $stmt->fetchColumn();
+        return $result !== false ? (int)$result : null;
+    }
+
+    /**
+     * Find a call by ID
+     */
+    public function find(int $id): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM calls WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result !== false ? $result : null;
+    }
 }

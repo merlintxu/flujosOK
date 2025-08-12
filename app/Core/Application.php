@@ -230,6 +230,33 @@ private function registerServices(): void
         )
     );
     $this->container->alias(\FlujosDimension\Services\AnalyticsService::class, 'analyticsService');
+
+    /* ---------- Jobs ---------- */
+    $this->container->singleton(
+        \FlujosDimension\Jobs\TranscriptionJob::class,
+        fn ($c) => new \FlujosDimension\Jobs\TranscriptionJob(
+            $c->resolve('callRepository'),
+            $c->resolve(\FlujosDimension\Infrastructure\Http\OpenAIClient::class),
+            $c->resolve('asyncTaskRepository')
+        )
+    );
+
+    $this->container->singleton(
+        \FlujosDimension\Jobs\CRMSyncJob::class,
+        fn ($c) => new \FlujosDimension\Jobs\CRMSyncJob(
+            $c->resolve('callRepository'),
+            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class)
+        )
+    );
+
+    $this->container->singleton(
+        \FlujosDimension\Jobs\DownloadRecordingJob::class,
+        fn ($c) => new \FlujosDimension\Jobs\DownloadRecordingJob(
+            $c->resolve('ringoverService'),
+            $c->resolve('callRepository'),
+            $c->resolve('asyncTaskRepository')
+        )
+    );
 }
 
    

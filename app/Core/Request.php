@@ -14,6 +14,7 @@ class Request
     private array $headers;
     private ?string $body;
     private ?array $jsonBody;
+    private ?string $correlationId;
     
     public function __construct(?string $body = null)
     {
@@ -23,6 +24,7 @@ class Request
         $this->headers = $this->parseHeaders();
         $this->body = $body ?? file_get_contents('php://input');
         $this->jsonBody = null;
+        $this->correlationId = $this->initializeCorrelationId();
     }
     
     /**
@@ -340,6 +342,76 @@ class Request
     public function file(string $key): ?array
     {
         return $this->hasFile($key) ? $_FILES[$key] : null;
+    }
+
+    /**
+     * Initialize correlation ID from headers or generate new one
+     */
+    private function initializeCorrelationId(): string
+    {
+        // Try to get correlation ID from headers (for propagation)
+        $correlationId = $this->getHeader('x-correlation-id') 
+                      ?? $this->getHeader('correlation-id')
+                      ?? $this->input('correlation_id');
+        
+        // If not found, generate a new one
+        if (!$correlationId) {
+            $correlationId = $this->generateCorrelationId();
+        }
+        
+        return $correlationId;
+    }
+
+    /**
+     * Generate a new correlation ID
+     */
+    private function generateCorrelationId(): string
+    {
+        return sprintf(
+            '%s-%s-%s',
+            date('Ymd'),
+            substr(uniqid(), -8),
+            bin2hex(random_bytes(4))
+        );
+    }
+
+    /**
+     * Get the correlation ID for this request
+     */
+    public function getCorrelationId(): string
+    {
+        return $this->correlationId;
+    }
+
+    /**
+     * Set a custom correlation ID
+     */
+    public function setCorrelationId(string $correlationId): void
+    {
+        $this->correlationId = $correlationId;
+    }
+
+    /**
+     * Get correlation ID for logging context
+     */
+    public function getLogContext(): array
+    {
+        return [
+            'correlation_id' => $this->correlationId,
+            'method' => $this->getMethod(),
+            'path' => $this->getPath(),
+            'ip' => $this->getClientIp(),
+            'user_agent' => substr($this->getUserAgent(), 0, 100)
+        ];
+    }
+
+    /**
+     * Check if request has correlation ID in headers (propagated)
+     */
+    public function hasPropagatedCorrelationId(): bool
+    {
+        return $this->getHeader('x-correlation-id') !== null 
+            || $this->getHeader('correlation-id') !== null;
     }
 }
 

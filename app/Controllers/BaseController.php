@@ -30,12 +30,21 @@ abstract class BaseController
      */
     protected function jsonResponse(array $data, int $status = 200): Response
     {
-        return new Response(json_encode($data), $status, [
+        // Add correlation ID to response headers
+        $headers = [
             'Content-Type' => 'application/json',
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With'
-        ]);
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID',
+            'X-Correlation-ID' => $this->request->getCorrelationId()
+        ];
+
+        // Add correlation ID to response data if not already present
+        if (!isset($data['correlation_id'])) {
+            $data['correlation_id'] = $this->request->getCorrelationId();
+        }
+
+        return new Response(json_encode($data), $status, $headers);
     }
     
     /**
@@ -46,7 +55,8 @@ abstract class BaseController
         return $this->jsonResponse([
             'success' => false,
             'error' => $message,
-            'timestamp' => date('Y-m-d H:i:s')
+            'timestamp' => date('Y-m-d H:i:s'),
+            'correlation_id' => $this->request->getCorrelationId()
         ], $status);
     }
     

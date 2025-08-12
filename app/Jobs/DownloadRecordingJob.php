@@ -55,12 +55,18 @@ class DownloadRecordingJob implements JobInterface
         $metadata['duration'] = $payload['duration'];
         $this->calls->addRecording($callId, $metadata);
 
-        // Queue transcription job
+        // Get correlation ID from payload
+        $correlationId = $payload['correlation_id'] ?? bin2hex(random_bytes(16));
+        $batchId = $payload['batch_id'] ?? null;
+
+        // Queue transcription job with correlation ID
         $this->tasks->enqueue(TranscriptionJob::class, [
             'call_id' => $callId,
             'path'    => $info['path'],
             'format'  => $info['format'],
             'size'    => $info['size'],
-        ]);
+            'correlation_id' => $correlationId,
+            'batch_id' => $batchId,
+        ], 5, $correlationId);
     }
 }

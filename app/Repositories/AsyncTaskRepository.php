@@ -11,11 +11,17 @@ class AsyncTaskRepository
      * Enqueue a new async task.
      * @param array<string,mixed> $data
      */
-    public function enqueue(string $taskType, array $data, int $priority = 5): string
+    public function enqueue(string $taskType, array $data, int $priority = 5, ?string $correlationId = null): string
     {
         $taskId = bin2hex(random_bytes(16));
         $now = date('Y-m-d H:i:s');
-        $stmt = $this->db->prepare('INSERT INTO async_tasks (task_id, task_type, task_data, priority, status, attempts, scheduled_at, created_at) VALUES (:task_id,:task_type,:task_data,:priority,\'pending\',0,:scheduled_at,:created_at)');
+        
+        // Add correlation ID to task data if provided
+        if ($correlationId) {
+            $data['correlation_id'] = $correlationId;
+        }
+        
+        $stmt = $this->db->prepare('INSERT INTO async_tasks (task_id, task_type, task_data, priority, status, attempts, scheduled_at, created_at, correlation_id) VALUES (:task_id,:task_type,:task_data,:priority,\'pending\',0,:scheduled_at,:created_at,:correlation_id)');
         $stmt->execute([
             ':task_id' => $taskId,
             ':task_type' => $taskType,
@@ -23,6 +29,7 @@ class AsyncTaskRepository
             ':priority' => $priority,
             ':scheduled_at' => $now,
             ':created_at' => $now,
+            ':correlation_id' => $correlationId,
         ]);
         return $taskId;
     }
