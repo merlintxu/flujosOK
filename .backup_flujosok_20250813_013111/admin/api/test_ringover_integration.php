@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/init.php';
 
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
 
 $logDir = dirname(__DIR__, 2) . '/storage/logs';
@@ -19,8 +19,8 @@ function log_line(string $message): void {
 }
 
 try {
-    /** @var CallService $ringover */
-    $ringover = $container->resolve(CallService::class);
+    /** @var RingoverService $ringover */
+    $ringover = $container->resolve(RingoverService::class);
     /** @var CallRepository $repo */
     $repo     = $container->resolve('callRepository');
 

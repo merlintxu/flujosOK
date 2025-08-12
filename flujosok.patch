@@ -1,0 +1,161 @@
+diff --git a/admin/api/init.php b/admin/api/init.php
+index 0000000..0000000 100644
+--- a/admin/api/init.php
++++ b/admin/api/init.php
+@@ -1,12 +1,12 @@
+ <?php
+ declare(strict_types=1);
+ 
+ // ...
+ 
+-/** Envía un error JSON y termina la ejecución */
+-function respond_error(string $message, int $code = 400): void {
++/** Envía un error JSON y termina la ejecución (no retorna) */
++function respond_error(string $message, int $code = 400): never {
+     http_response_code($code);
+     echo json_encode(['success' => false, 'message' => $message]);
+     if (defined('FD_TESTING') && FD_TESTING) {
+         throw new \RuntimeException($message);
+     }
+     exit;
+ }
+diff --git a/admin/api/sync_ringover.php b/admin/api/sync_ringover.php
+index 0000000..0000000 100644
+--- a/admin/api/sync_ringover.php
++++ b/admin/api/sync_ringover.php
+@@ -1,20 +1,20 @@
+ <?php
+ declare(strict_types=1);
+ 
+ use Symfony\Component\HttpFoundation\Request;
+ use Symfony\Component\HttpFoundation\JsonResponse;
+-use FlujosDimension\Services\RingoverService;
++use FlujosDimension\Services\CallService;
+ 
+ // ...
+ 
+ // Obtener contenedor
+ $container = require __DIR__ . '/../../bootstrap.php';
+ 
+-/** @var RingoverService $service */
+-$service = $container->resolve(RingoverService::class);
++/** @var CallService $service */
++$service = $container->resolve(CallService::class);
+ 
+ // Ejemplo de uso posterior:
+ // $calls = $service->getCalls($since);
+ // $mapped = $service->mapCallFields($call);
+diff --git a/admin/api/test_ringover_integration.php b/admin/api/test_ringover_integration.php
+index 0000000..0000000 100644
+--- a/admin/api/test_ringover_integration.php
++++ b/admin/api/test_ringover_integration.php
+@@ -1,12 +1,12 @@
+ <?php
+ declare(strict_types=1);
+ 
+-use FlujosDimension\Services\RingoverService;
++use FlujosDimension\Services\CallService;
+ 
+ // ...
+ 
+-/** @var RingoverService $svc */
+-$svc = $container->resolve(RingoverService::class);
++/** @var CallService $svc */
++$svc = $container->resolve(CallService::class);
+diff --git a/app/Console/SyncHourlyCommand.php b/app/Console/SyncHourlyCommand.php
+index 0000000..0000000 100644
+--- a/app/Console/SyncHourlyCommand.php
++++ b/app/Console/SyncHourlyCommand.php
+@@ -1,14 +1,14 @@
+ <?php
+ declare(strict_types=1);
+ 
+ namespace FlujosDimension\Console;
+ 
+-use FlujosDimension\Services\RingoverService;
++use FlujosDimension\Services\CallService;
+ 
+ // ...
+ 
+-/** @var RingoverService $ringover */
+-$ringover = $this->container->resolve(RingoverService::class);
++/** @var CallService $ringover */
++$ringover = $this->container->resolve(CallService::class);
+diff --git a/app/Controllers/SyncController.php b/app/Controllers/SyncController.php
+index 0000000..0000000 100644
+--- a/app/Controllers/SyncController.php
++++ b/app/Controllers/SyncController.php
+@@ -1,16 +1,16 @@
+ <?php
+ declare(strict_types=1);
+ 
+ namespace FlujosDimension\Controllers;
+ 
+-use FlujosDimension\Services\RingoverService;
++use FlujosDimension\Services\CallService;
+ use Symfony\Component\HttpFoundation\Request;
+ use Symfony\Component\HttpFoundation\JsonResponse;
+ 
+ // ...
+ 
+-/** @var RingoverService $ringover */
+-$ringover = $this->container->resolve(RingoverService::class);
++/** @var CallService $ringover */
++$ringover = $this->container->resolve(CallService::class);
+diff --git a/app/Controllers/RingoverWebhookController.php b/app/Controllers/RingoverWebhookController.php
+index 0000000..0000000 100644
+--- a/app/Controllers/RingoverWebhookController.php
++++ b/app/Controllers/RingoverWebhookController.php
+@@ -1,12 +1,10 @@
+ <?php
+ declare(strict_types=1);
+ 
+ namespace FlujosDimension\Controllers;
+ 
+-use FlujosDimension\Services\RingoverService; // <- import no usado y deprecado
+-
+ // ...
+ 
+ // (no hay cambios de lógica; solo se elimina el import no usado)
+diff --git a/app/Controllers/DashboardController.php b/app/Controllers/DashboardController.php
+index 0000000..0000000 100644
+--- a/app/Controllers/DashboardController.php
++++ b/app/Controllers/DashboardController.php
+@@ -1,12 +1,10 @@
+ <?php
+ declare(strict_types=1);
+ 
+ namespace FlujosDimension\Controllers;
+ 
+-use FlujosDimension\Services\RingoverService; // <- import no usado y deprecado
+-
+ // ...
+ 
+ // (no hay cambios de lógica; solo se elimina el import no usado)
+diff --git a/app/Jobs/DownloadRecordingJob.php b/app/Jobs/DownloadRecordingJob.php
+index 0000000..0000000 100644
+--- a/app/Jobs/DownloadRecordingJob.php
++++ b/app/Jobs/DownloadRecordingJob.php
+@@ -1,20 +1,20 @@
+ <?php
+ declare(strict_types=1);
+ 
+ namespace FlujosDimension\Jobs;
+ 
+-use FlujosDimension\Services\RingoverService;
++use FlujosDimension\Services\CallService;
+ use FlujosDimension\Repositories\CallRepository;
+ use FlujosDimension\Repositories\AsyncTaskRepository;
+ 
+ final class DownloadRecordingJob
+ {
+-    public function __construct(
+-        private RingoverService $ringover,
++    public function __construct(
++        private CallService $ringover,
+         private CallRepository $calls,
+         private AsyncTaskRepository $tasks
+     ) {}
+ 
+     // ...
+ }

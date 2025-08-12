@@ -6,7 +6,7 @@ use FlujosDimension\Core\Container;
 use FlujosDimension\Core\Request;
 use FlujosDimension\Core\Response;
 use FlujosDimension\Services\AnalyticsService;
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use Exception;
 
 /**
@@ -16,7 +16,7 @@ use Exception;
 class DashboardController extends BaseController
 {
     private AnalyticsService $analyticsService;
-    private CallService $ringoverService;
+    private RingoverService $ringoverService;
     
     public function __construct(Container $container, Request $request)
     {

@@ -9,7 +9,7 @@ use FlujosDimension\Core\Response;
 use FlujosDimension\Services\AnalyticsService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Services\OpenAIService;
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Infrastructure\Http\HttpClient;
 use FlujosDimension\Infrastructure\Http\OpenAIClient;
 use GuzzleHttp\Handler\MockHandler;

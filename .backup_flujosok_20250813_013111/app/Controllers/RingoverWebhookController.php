@@ -4,7 +4,7 @@ namespace FlujosDimension\Controllers;
 
 use FlujosDimension\Core\Response;
 use FlujosDimension\Core\WebhookDeduplicator;
-use FlujosDimension\Services\CallService;
+use FlujosDimension\Services\RingoverService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\DTO\AudioJobDTO;
 use FlujosDimension\Support\Validator;

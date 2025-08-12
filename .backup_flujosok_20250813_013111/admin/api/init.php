@@ -33,7 +33,7 @@ if (!function_exists('post_bool')) {
 }
 
 if (!function_exists('respond_error')) {
-    function respond_error(string $message, int $code = 400): never {
+    function respond_error(string $message, int $code = 400): void {
         http_response_code($code);
         echo json_encode(['success' => false, 'message' => $message]);
         if (FD_TESTING) {
