@@ -51,6 +51,109 @@ final class RingoverClient
         $this->maxSize = $limitMb * 1024 * 1024;
     }
 
+    /** @return array{success: bool, message?: string} */
+    public function testConnection(): array
+    {
+        try {
+            $response = $this->http->get($this->baseUrl . '/calls', [
+                'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+                'query' => ['limit' => 1]
+            ]);
+            
+            return ['success' => true];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Retrieve calls from Ringover API with pagination support.
+     *
+     * @return Generator<int,array<string,mixed>>
+     */
+    public function getCalls(\DateTimeInterface $since, bool $full = false, ?string $fields = null, ?string $batchId = null): Generator
+    {
+        $query = [
+            'start_date' => $since->format('Y-m-d H:i:s'),
+            'limit' => 100
+        ];
+
+        if ($full) {
+            $query['full'] = 'true';
+        }
+        if ($fields) {
+            $query['fields'] = $fields;
+        }
+
+        $offset = 0;
+        do {
+            $query['offset'] = $offset;
+            
+            $response = $this->http->get($this->baseUrl . '/calls', [
+                'headers' => ['Authorization' => 'Bearer ' . $this->apiKey],
+                'query' => $query
+            ]);
+
+            $data = json_decode($response, true);
+            $calls = $data['data'] ?? [];
+
+            foreach ($calls as $call) {
+                yield $call;
+            }
+
+            $hasMore = count($calls) === $query['limit'];
+            $offset += $query['limit'];
+            
+        } while ($hasMore);
+    }
+
+    /**
+     * Download a recording file.
+     * @return array{path:string,size:int,duration:int,format:string}
+     */
+    public function downloadRecording(string $url, string $subdir = 'recordings'): array
+    {
+        return $this->downloadMedia($url, $subdir);
+    }
+
+    /**
+     * Download a voicemail file.
+     */
+    public function downloadVoicemail(string $url, string $dir = 'voicemails'): array
+    {
+        return $this->downloadMedia($url, $dir);
+    }
+
+    /**
+     * Download media file (recording or voicemail).
+     * @return array{path:string,size:int,duration:int,format:string}
+     */
+    private function downloadMedia(string $url, string $subdir): array
+    {
+        $response = $this->http->get($url, [
+            'headers' => ['Authorization' => 'Bearer ' . $this->apiKey]
+        ]);
+
+        $filename = basename(parse_url($url, PHP_URL_PATH)) ?: 'media_' . time();
+        $dir = __DIR__ . '/../../../storage/' . $subdir;
+        
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $path = $dir . '/' . $filename;
+        file_put_contents($path, $response);
+
+        return [
+            'path' => $path,
+            'size' => filesize($path),
+            'duration' => 0, // Would need media analysis
+            'format' => pathinfo($filename, PATHINFO_EXTENSION)
+        ];
+    }
+}
+
+// Exception classes moved outside the main class
 class RecordingException extends RuntimeException {}
 class RecordingUnauthorizedException extends RecordingException {}
 class RecordingTooLargeException extends RecordingException {}
