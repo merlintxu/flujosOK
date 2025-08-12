@@ -55,3 +55,4 @@
 - Gestión básica de llamadas y transcripciones
 - Arquitectura PHP 8.2 con DI container
 
+

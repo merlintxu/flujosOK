@@ -201,4 +201,3 @@ curl -X POST "https://flujos-dimension.dodepecho.com/admin/api/test_ringover_int
 **Autor**: Manus AI  
 **Revisado por**: Equipo FlujosOK  
 **Aprobado para producción**: ✅
-
