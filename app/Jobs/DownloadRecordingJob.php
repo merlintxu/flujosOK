@@ -1,66 +1,29 @@
 <?php
+
 namespace FlujosDimension\Jobs;
 
-use FlujosDimension\Services\RingoverService;
-use FlujosDimension\Repositories\CallRepository;
-use FlujosDimension\Repositories\AsyncTaskRepository;
-use FlujosDimension\Support\Validator;
-use FlujosDimension\Core\Config;
+use GuzzleHttp\Client;
+use PDO;
 
-class DownloadRecordingJob implements JobInterface
+class DownloadRecordingJob
 {
     public function __construct(
-        private RingoverService $ringover,
-        private CallRepository $calls,
-        private AsyncTaskRepository $tasks
+        private PDO $pdo,
+        private Client $http
     ) {}
 
-    /** @param array<string,mixed> $payload */
-    public function handle(array $payload): void
+    public function handle(string $callId, string $url): void
     {
-        $errors = Validator::validate($payload, [
-            'call_id'  => 'required|string',
-            'url'      => 'required|format:url',
-            'duration' => 'required|integer',
-        ]);
-        if ($errors) {
-            throw new \InvalidArgumentException('Invalid job payload');
-        }
+        $dir = __DIR__ . '/../../storage/recordings';
+        if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+        $target = $dir . "/{$callId}.mp3";
+        $tmp = $target . '.part';
 
-        $url = $payload['url'];
-        $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
-        $allowed = ['mp3', 'wav', 'ogg', 'm4a'];
-        if (!in_array($ext, $allowed, true)) {
-            throw new \RuntimeException('Unsupported audio format');
-        }
+        $resp = $this->http->get($url, ['timeout' => 60]);
+        file_put_contents($tmp, (string) $resp->getBody());
+        rename($tmp, $target);
 
-        $storageDir = dirname(__DIR__, 2) . '/storage';
-        $recordingsDir = $storageDir . '/recordings';
-        $info = $this->ringover->downloadRecording($url, $recordingsDir);
-
-        $maxMb = (int) Config::getInstance()->get('RINGOVER_MAX_RECORDING_MB', 100);
-        if ($info['size'] > $maxMb * 1024 * 1024) {
-            @unlink($info['path']);
-            throw new \RuntimeException('Recording exceeds max size');
-        }
-
-        $callId = $this->calls->findIdByRingoverId($payload['call_id']);
-        if ($callId === null) {
-            @unlink($info['path']);
-            throw new \RuntimeException('Call not found');
-        }
-
-        $metadata = $info;
-        $metadata['url'] = $url;
-        $metadata['duration'] = $payload['duration'];
-        $this->calls->addRecording($callId, $metadata);
-
-        // Queue transcription job
-        $this->tasks->enqueue(TranscriptionJob::class, [
-            'call_id' => $callId,
-            'path'    => $info['path'],
-            'format'  => $info['format'],
-            'size'    => $info['size'],
-        ]);
+        $stmt = $this->pdo->prepare("UPDATE calls SET recording_path=?, has_recording=1 WHERE call_id=?");
+        $stmt->execute([$target, $callId]);
     }
 }

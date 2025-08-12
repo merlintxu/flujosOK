@@ -9,6 +9,11 @@ final class CallRepository
 {
     public function __construct(private PDO $db) {}
 
+    public function getConnection(): PDO
+    {
+        return $this->db;
+    }
+
     /** @return array<int,array<string,mixed>> */
     public function pending(int $max = 50): array
     {
@@ -118,6 +123,36 @@ final class CallRepository
         ]);
 
         return (int)$stmt->rowCount();
+    }
+
+    /**
+     * @param array $row campos ya mapeados a columnas de `calls`
+     * @return array [inserted:int (0/1), updated:int (0/1)]
+     */
+    public function upsertByCallId(array $row): array
+    {
+        $updatable = [
+            'status','total_duration','incall_duration','queue_duration','ringing_duration',
+            'recording_url','voicemail_url','has_recording','answered_time','end_time',
+            'start_time','contact_number','channel_id'
+        ];
+
+        $cols = array_keys($row);
+        $place = implode(',', array_fill(0, count($cols), '?'));
+        $updates = implode(',', array_map(fn($c)=>"`$c`=VALUES(`$c`)", $updatable));
+
+        $sql = "INSERT INTO `calls` (".implode(',', array_map(fn($c)=>"`$c`", $cols)).")
+                VALUES ($place)
+                ON DUPLICATE KEY UPDATE $updates, `updated_at`=CURRENT_TIMESTAMP";
+
+        $stmt = $this->db->prepare($sql);
+        $ok = $stmt->execute(array_values($row));
+        if (!$ok) {
+            throw new \RuntimeException('DB upsert failed: '.implode(' | ', $stmt->errorInfo()));
+        }
+
+        $affected = $stmt->rowCount();
+        return [$affected === 1 ? 1 : 0, $affected === 2 ? 1 : 0];
     }
 
     /** Fetch a call by its primary ID. */

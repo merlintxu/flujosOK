@@ -178,7 +178,7 @@ private function registerServices(): void
     $this->container->singleton(
         \FlujosDimension\Infrastructure\Http\RingoverClient::class,
         fn ($c) => new \FlujosDimension\Infrastructure\Http\RingoverClient(
-            $c->resolve('httpClient'),
+            new \GuzzleHttp\Client(),
             $this->config
         )
     );
@@ -213,9 +213,8 @@ private function registerServices(): void
     $this->container->singleton(
         \FlujosDimension\Services\SyncService::class,
         fn ($c) => new \FlujosDimension\Services\SyncService(
-            $c->resolve(\FlujosDimension\Services\CallService::class),
-            $c->resolve(\FlujosDimension\Services\AnalysisService::class),
-            $c->resolve(\FlujosDimension\Services\CRMService::class)
+            $c->resolve(\FlujosDimension\Infrastructure\Http\RingoverClient::class),
+            $c->resolve('callRepository')
         )
     );
     $this->container->alias(\FlujosDimension\Services\SyncService::class, 'syncService');
@@ -297,13 +296,15 @@ private function registerServices(): void
      */
     private function defineRoutes(): void
     {
+        $container = $this->container;
+
         // API Routes
-        $this->router->group('/api', function($router) {
+        $this->router->group('/api', function($router) use ($container) {
             $router->get('/status', 'ApiController@status');
             $router->get('/health', 'ApiController@health');
             $router->post('/webhooks', 'WebhookController@create');
 
-            $router->group('/v3', function($router) {
+            $router->group('/v3', function($router) use ($container) {
                 // Calls
                 $router->get('/calls', 'CallsController@index');
                 $router->get('/calls/{id}', 'CallsController@show');
@@ -369,6 +370,45 @@ private function registerServices(): void
                 $router->post('/token/validate', 'TokenController@verify');
                 $router->get('/token/active', 'TokenController@active');
                 $router->delete('/token/revoke', 'TokenController@revoke');
+
+                $router->get('/debug/ringover/preview', function() use ($container) {
+                    $since = $_GET['since'] ?? (new \DateTime('-7 days'))->format(DATE_ATOM);
+                    $limit = (int)($_GET['limit'] ?? 5);
+                    $client = $container->resolve(\FlujosDimension\Infrastructure\Http\RingoverClient::class);
+                    $resp = $client->getCalls(['start_date' => $since, 'limit' => $limit]);
+                    $list = $resp['call_list'] ?? [];
+                    $mapped = array_map(function($c) {
+                        $dir = $c['direction'] ?? null;
+                        return [
+                          'ringover_id'      => $c['cdr_id'] ?? null,
+                          'call_id'          => $c['call_id'] ?? null,
+                          'direction'        => ($dir==='in'||$dir==='inbound')?'inbound':(($dir==='out'||$dir==='outbound')?'outbound':null),
+                          'status'           => $c['last_state'] ?? ($c['status'] ?? null),
+                          'start_time'       => $c['start_time'] ?? null,
+                          'answered_time'    => $c['answered_time'] ?? null,
+                          'end_time'         => $c['end_time'] ?? null,
+                          'incall_duration'  => $c['incall_duration'] ?? null,
+                          'total_duration'   => $c['total_duration'] ?? null,
+                          'queue_duration'   => $c['queue_duration'] ?? null,
+                          'ringing_duration' => $c['ringing_duration'] ?? null,
+                          'contact_number'   => $c['contact_number'] ?? null,
+                          'recording_url'    => $c['record'] ?? ($c['record_url'] ?? null),
+                        ];
+                    }, $list);
+
+                    return new Response(json_encode([
+                       'count'  => count($mapped),
+                       'sample' => array_slice($mapped, 0, min(3, count($mapped)))
+                    ], JSON_UNESCAPED_UNICODE), 200, ['Content-Type'=>'application/json']);
+                });
+
+                $router->post('/sync/ringover/manual', function($request) use ($container) {
+                    $since = $request->post('since') ?? (new \DateTime('-30 days'))->format(DATE_ATOM);
+                    $until = $request->post('until') ?? null;
+                    $svc = $container->resolve(\FlujosDimension\Services\SyncService::class);
+                    $res = $svc->importRingover($since, $until, 100);
+                    return new Response(json_encode($res, JSON_UNESCAPED_UNICODE), 200, ['Content-Type'=>'application/json']);
+                });
             });
         });
         
