@@ -12,7 +12,7 @@ class RingoverWebhookControllerTest extends TestCase
     private function container(PDO $pdo, string $secret): Container
     {
         $c = new Container();
-        $c->instance('logger', new class { public function error(...$a){} public function info(...$a){} });
+        $c->instance('logger', new \Psr\Log\NullLogger());
         $c->instance('config', ['RINGOVER_WEBHOOK_SECRET' => $secret]);
         $c->instance('database', $pdo);
         $c->instance(\FlujosDimension\Repositories\AsyncTaskRepository::class, new \FlujosDimension\Repositories\AsyncTaskRepository($pdo));
@@ -35,7 +35,9 @@ class RingoverWebhookControllerTest extends TestCase
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, scheduled_at TEXT, created_at TEXT);");
+        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, visible_at TEXT, reserved_at TEXT, error_reason TEXT, dlq INTEGER DEFAULT 0, max_attempts INTEGER DEFAULT 3, retry_backoff_sec INTEGER DEFAULT 60, created_at TEXT);");
+        $pdo->exec("CREATE TABLE webhook_deduplication (id INTEGER PRIMARY KEY AUTOINCREMENT, deduplication_key TEXT, webhook_type TEXT, payload_hash TEXT, correlation_id TEXT, processed_at TEXT, expires_at TEXT);");
+        $pdo->exec("CREATE TABLE webhook_processing_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, webhook_type TEXT, deduplication_key TEXT, correlation_id TEXT, status TEXT, payload_size INTEGER, processing_time_ms INTEGER, error_message TEXT);");
 
         $secret = 'topsecret';
         $body = json_encode(['call_id' => 'r1', 'recording_url' => 'http://example.com/a.mp3', 'duration' => 5]);
@@ -60,7 +62,9 @@ class RingoverWebhookControllerTest extends TestCase
     {
         $pdo = new PDO('sqlite::memory:');
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, scheduled_at TEXT, created_at TEXT);");
+        $pdo->exec("CREATE TABLE async_tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task_id TEXT, task_type TEXT, task_data TEXT, priority INTEGER DEFAULT 5, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, visible_at TEXT, reserved_at TEXT, error_reason TEXT, dlq INTEGER DEFAULT 0, max_attempts INTEGER DEFAULT 3, retry_backoff_sec INTEGER DEFAULT 60, created_at TEXT);");
+        $pdo->exec("CREATE TABLE webhook_deduplication (id INTEGER PRIMARY KEY AUTOINCREMENT, deduplication_key TEXT, webhook_type TEXT, payload_hash TEXT, correlation_id TEXT, processed_at TEXT, expires_at TEXT);");
+        $pdo->exec("CREATE TABLE webhook_processing_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, webhook_type TEXT, deduplication_key TEXT, correlation_id TEXT, status TEXT, payload_size INTEGER, processing_time_ms INTEGER, error_message TEXT);");
 
         $secret = 'abc';
         $body = json_encode(['call_id' => 'r1', 'recording_url' => 'http://e/a.mp3']);

@@ -15,6 +15,8 @@ final class RateLimiter
     private array $config;
     private bool $passthrough = false;
     private ?Logger $logger;
+    /** @var array<string,array|null> */
+    private array $serviceConfigCache = [];
 
     public function __construct(PDO $db, array $config = [], ?Logger $logger = null)
     {
@@ -34,11 +36,16 @@ final class RateLimiter
         $required = ['rate_limit_buckets', 'rate_limit_logs'];
         $missing = [];
 
+        $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
         foreach ($required as $table) {
             try {
-                $stmt = $this->db->prepare(
-                    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table'
-                );
+                if ($driver === 'sqlite') {
+                    $stmt = $this->db->prepare('SELECT name FROM sqlite_master WHERE type = "table" AND name = :table');
+                } else {
+                    $stmt = $this->db->prepare(
+                        'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table'
+                    );
+                }
                 $stmt->execute([':table' => $table]);
                 if (!$stmt->fetchColumn()) {
                     $missing[] = $table;
@@ -54,6 +61,30 @@ final class RateLimiter
             $this->logger?->warning('RateLimiter: passthrough=true', ['missing_tables' => $missing]);
         } else {
             $this->logger?->info('RateLimiter: passthrough=false');
+        }
+    }
+
+    /**
+     * Get rate limit configuration for a service from database (cached)
+     */
+    private function getServiceConfig(string $service): ?array
+    {
+        if (array_key_exists($service, $this->serviceConfigCache)) {
+            return $this->serviceConfigCache[$service];
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT max_requests_per_minute, max_requests_per_hour FROM rate_limit_config WHERE service_name = :service'
+            );
+            $stmt->execute([':service' => $service]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $this->serviceConfigCache[$service] = $row;
+            return $row;
+        } catch (PDOException $e) {
+            $this->logger?->error('rate_limit_config_error', ['service' => $service, 'error' => $e->getMessage()]);
+            $this->serviceConfigCache[$service] = null;
+            return null;
         }
     }
 
@@ -249,27 +280,11 @@ final class RateLimiter
      */
     private function getCapacityForKey(string $key): int
     {
-        // Service-specific limits
-        $limits = [
-            'openai:transcribe' => 50,      // 50 requests
-            'openai:chat' => 100,           // 100 requests  
-            'pipedrive:api' => 200,         // 200 requests
-            'ringover:api' => 300,          // 300 requests
-            'ringover:download' => 20,      // 20 downloads
-        ];
-        
-        // Check for exact match first
-        if (isset($limits[$key])) {
-            return $limits[$key];
+        $service = explode(':', $key)[0];
+        if ($config = $this->getServiceConfig($service)) {
+            return (int)$config['max_requests_per_minute'];
         }
-        
-        // Check for service prefix match
-        foreach ($limits as $pattern => $limit) {
-            if (str_starts_with($key, explode(':', $pattern)[0] . ':')) {
-                return $limit;
-            }
-        }
-        
+
         return $this->config['default_capacity'];
     }
 
@@ -278,27 +293,11 @@ final class RateLimiter
      */
     private function getRefillRateForKey(string $key): float
     {
-        // Service-specific refill rates (tokens per second)
-        $rates = [
-            'openai:transcribe' => 0.5,     // 30 per minute
-            'openai:chat' => 1.0,           // 60 per minute
-            'pipedrive:api' => 2.0,         // 120 per minute
-            'ringover:api' => 3.0,          // 180 per minute
-            'ringover:download' => 0.2,     // 12 per minute
-        ];
-        
-        // Check for exact match first
-        if (isset($rates[$key])) {
-            return $rates[$key];
+        $service = explode(':', $key)[0];
+        if ($config = $this->getServiceConfig($service)) {
+            return ((int)$config['max_requests_per_minute']) / 60.0;
         }
-        
-        // Check for service prefix match
-        foreach ($rates as $pattern => $rate) {
-            if (str_starts_with($key, explode(':', $pattern)[0] . ':')) {
-                return $rate;
-            }
-        }
-        
+
         return $this->config['default_refill_rate'] / 60.0; // Convert per minute to per second
     }
 
