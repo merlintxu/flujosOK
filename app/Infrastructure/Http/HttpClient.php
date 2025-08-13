@@ -39,9 +39,9 @@ final class HttpClient
 
         // Use provided retry strategy or create default one
         $this->retryStrategy = $retryStrategy ?? RetryStrategy::forApiCalls();
-        
+
         // Use provided rate limiter or create default one if DB is available
-        $this->rateLimiter = $rateLimiter ?? ($db ? new RateLimiter($db) : null);
+        $this->rateLimiter = $rateLimiter ?? ($db ? new RateLimiter($db, [], $logger) : null);
     }
 
     /**
