@@ -7,7 +7,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 use PDO;
-use FlujosDimension\Core\Logger;
+use Psr\Log\LoggerInterface;
 use FlujosDimension\Core\RetryStrategy;
 use FlujosDimension\Core\RateLimiter;
 
@@ -25,7 +25,7 @@ final class HttpClient
         private readonly int $maxRetries = 5,
         private readonly int $baseDelayMs = 500,
         private ?PDO $db = null,
-        private ?Logger $logger = null,
+        private ?LoggerInterface $logger = null,
         ?RetryStrategy $retryStrategy = null,
         ?RateLimiter $rateLimiter = null
     ) {
@@ -38,10 +38,10 @@ final class HttpClient
         ]));
 
         // Use provided retry strategy or create default one
-        $this->retryStrategy = $retryStrategy ?? RetryStrategy::forApiCalls();
+        $this->retryStrategy = $retryStrategy ?? RetryStrategy::forApiCalls($this->logger);
 
         // Use provided rate limiter or create default one if DB is available
-        $this->rateLimiter = $rateLimiter ?? ($db ? new RateLimiter($db, [], $logger) : null);
+        $this->rateLimiter = $rateLimiter ?? ($db ? new RateLimiter($db, [], $this->logger instanceof \FlujosDimension\Core\Logger ? $this->logger : null) : null);
     }
 
     /**

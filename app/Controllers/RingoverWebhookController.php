@@ -23,7 +23,8 @@ class RingoverWebhookController extends BaseController
         
         // Initialize webhook deduplicator
         $db = $this->container->resolve('db');
-        $this->deduplicator = new WebhookDeduplicator($db);
+        $logger = $this->container->resolve('logger');
+        $this->deduplicator = new WebhookDeduplicator($db, [], $logger);
     }
 
     /**

@@ -4,12 +4,14 @@ namespace FlujosDimension\Jobs;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Infrastructure\Http\PipedriveClient;
 use FlujosDimension\Support\Validator;
+use Psr\Log\LoggerInterface;
 
 class CRMSyncJob implements JobInterface
 {
     public function __construct(
         private CallRepository $calls,
-        private PipedriveClient $pipedrive
+        private PipedriveClient $pipedrive,
+        private LoggerInterface $logger
     ) {}
 
     /** @param array<string,mixed> $payload */
@@ -118,7 +120,10 @@ class CRMSyncJob implements JobInterface
             // Log error
             $this->calls->logCrmSync($callId, 'failed', $e->getMessage(), $batchId, $correlationId);
             
-            error_log("CRMSyncJob failed for call {$callId}: " . $e->getMessage());
+            $this->logger->error('crmsync_failed', [
+                'call_id' => $callId,
+                'error' => $e->getMessage()
+            ]);
             
             throw $e; // Re-throw for job retry mechanism
         }

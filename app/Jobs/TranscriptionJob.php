@@ -6,13 +6,15 @@ use FlujosDimension\Repositories\AsyncTaskRepository;
 use FlujosDimension\Infrastructure\Http\OpenAIClient;
 use FlujosDimension\Support\Validator;
 use FlujosDimension\Core\Config;
+use Psr\Log\LoggerInterface;
 
 class TranscriptionJob implements JobInterface
 {
     public function __construct(
         private CallRepository $calls,
         private OpenAIClient $openai,
-        private AsyncTaskRepository $tasks
+        private AsyncTaskRepository $tasks,
+        private LoggerInterface $logger
     ) {}
 
     /** @param array<string,mixed> $payload */
@@ -137,7 +139,10 @@ class TranscriptionJob implements JobInterface
 
         } catch (\Exception $e) {
             // Log error and mark as failed
-            error_log("TranscriptionJob failed for call {$callId}: " . $e->getMessage());
+            $this->logger->error('transcription_failed', [
+                'call_id' => $callId,
+                'error' => $e->getMessage()
+            ]);
             
             $this->calls->updateAnalysis($callId, [
                 'pending_transcriptions' => 0,

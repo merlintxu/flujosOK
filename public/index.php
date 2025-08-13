@@ -43,7 +43,11 @@ try {
     }
     
     // Log del error
-    error_log("Fatal error in Flujos Dimension v4.2: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+    (new \FlujosDimension\Core\Logger())->error('fatal_error', [
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
     
     // Respuesta JSON
     header('Content-Type: application/json');

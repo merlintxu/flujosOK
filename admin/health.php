@@ -36,6 +36,8 @@ $pdo = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS'], [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
 ]);
 
+$logger = new \FlujosDimension\Core\Logger(dirname(__DIR__) . '/storage/logs');
+
 // Gather metrics for the last hour
 $sql = "SELECT service,
                COUNT(*) AS total_requests,
@@ -75,7 +77,7 @@ $latencyThreshold = 2000; // ms
     <?php foreach ($metrics as $row):
         $alert = ($row['error_rate'] > $errorThreshold) || ($row['p95_latency'] > $latencyThreshold);
         if ($alert) {
-            error_log('api_health_alert: ' . json_encode($row));
+            $logger->error('api_health_alert', $row);
         }
     ?>
     <tr class="<?php echo $alert ? 'alert' : ''; ?>">

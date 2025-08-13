@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace FlujosDimension\Core;
 
 use PDO;
+use Psr\Log\LoggerInterface;
 
 /**
  * Webhook deduplicator for ensuring idempotency
@@ -12,10 +13,12 @@ final class WebhookDeduplicator
 {
     private PDO $db;
     private array $config;
+    private ?LoggerInterface $logger;
 
-    public function __construct(PDO $db, array $config = [])
+    public function __construct(PDO $db, array $config = [], ?LoggerInterface $logger = null)
     {
         $this->db = $db;
+        $this->logger = $logger;
         $this->config = array_merge([
             'default_ttl' => 3600, // 1 hour default TTL
             'max_ttl' => 86400,    // 24 hours max TTL
@@ -131,7 +134,7 @@ final class WebhookDeduplicator
             ]);
         } catch (\Exception $e) {
             // Log but don't throw - this is cleanup
-            error_log("Failed to mark webhook as failed: " . $e->getMessage());
+            $this->logger?->error('webhook_mark_failed', ['error' => $e->getMessage()]);
         }
     }
 
@@ -327,7 +330,7 @@ final class WebhookDeduplicator
             ]);
         } catch (\Exception $e) {
             // Don't throw on logging failures
-            error_log("Failed to log webhook processing: " . $e->getMessage());
+            $this->logger?->error('webhook_log_failed', ['error' => $e->getMessage()]);
         }
     }
 }
