@@ -16,7 +16,8 @@ class N8nControllerTest extends TestCase
     private function makeContainer(): Container
     {
         $config = Config::getInstance();
-        $config->set('JWT_SECRET', 'secret');
+        $config->set('JWT_KEYS_CURRENT', 'secret');
+        $config->set('JWT_KID', 'test');
         $config->set('JWT_EXPIRATION_HOURS', '1');
 
         $pdo = new PDO('sqlite::memory:');

@@ -12,7 +12,8 @@
     <env name="DB_PASS" value="pass"/>
     <env name="ADMIN_USER" value="admin"/>
     <env name="ADMIN_PASS" value="secret"/>
-    <env name="JWT_SECRET" value="key"/>
+    <env name="JWT_KEYS_CURRENT" value="key"/>
+    <env name="JWT_KID" value="test"/>
   </php>
   <source>
     <include>

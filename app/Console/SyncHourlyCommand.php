@@ -2,7 +2,7 @@
 namespace FlujosDimension\Console;
 
 use FlujosDimension\Core\Application;
-use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Services\CallService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Services\AnalyticsService;
 use Symfony\Component\Console\Command\Command;
@@ -33,13 +33,13 @@ class SyncHourlyCommand extends Command
         $container = $this->app->getContainer();
 
         try {
-            if (!$container->bound(RingoverService::class) || !$container->bound('callRepository')) {
+            if (!$container->bound(CallService::class) || !$container->bound('callRepository')) {
                 $output->writeln('<info>No services configured</info>');
                 return Command::SUCCESS;
             }
 
-            /** @var RingoverService $ringover */
-            $ringover = $container->resolve(RingoverService::class);
+            /** @var CallService $ringover */
+            $ringover = $container->resolve(CallService::class);
             /** @var CallRepository $repo */
             $repo     = $container->resolve('callRepository');
             /** @var AnalyticsService|null $analytics */

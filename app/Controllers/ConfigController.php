@@ -22,7 +22,8 @@ class ConfigController extends BaseController
                 'RINGOVER_API_KEY',
                 'PIPEDRIVE_API_TOKEN',
                 'OPENAI_API_KEY',
-                'JWT_SECRET',
+                'JWT_KEYS_CURRENT',
+                'JWT_KEYS_PREVIOUS',
                 'DB_PASS',
             ];
             foreach ($sensitive as $key) {

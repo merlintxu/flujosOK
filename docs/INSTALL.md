@@ -11,7 +11,8 @@ cp .env.example .env
    Edit `.env` and configure the database variables (`DB_HOST`, `DB_PORT`,
    `DB_NAME`, `DB_USER`, `DB_PASS`) and API credentials
    `RINGOVER_API_KEY`, `PIPEDRIVE_API_TOKEN`, `OPENAI_API_KEY`.
-   Also set `JWT_SECRET`. The value of `ADMIN_PASS` should be generated
+   Also set JWT keys: `JWT_KID`, `JWT_KEYS_CURRENT` and (optionally)
+   `JWT_KEYS_PREVIOUS`. The value of `ADMIN_PASS` should be generated
    with `password_hash`.
 3. **Import the database schema** located in `database/flujodimen_db.sql` into your MySQL/MariaDB server and
    then run the SQL scripts in `database/migrations/` to create the rate limiting and webhook deduplication

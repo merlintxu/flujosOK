@@ -77,6 +77,8 @@ curl -X POST https://localhost/api/webhooks \
 - `PIPEDRIVE_API_TOKEN`: token de autenticación de Pipedrive.
 
 ### Seguridad y administración
-- `JWT_SECRET`: secreto para firmar tokens JWT.
+- `JWT_KID`: identificador de la clave activa.
+- `JWT_KEYS_CURRENT`: clave actual para firmar tokens JWT.
+- `JWT_KEYS_PREVIOUS`: claves anteriores aceptadas durante la rotación.
 - `ADMIN_USER`: usuario del panel de administración.
 - `ADMIN_PASS`: contraseña encriptada para el panel.
