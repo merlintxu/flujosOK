@@ -236,7 +236,7 @@
             $configStatus = [
                 'Base de Datos' => !empty($this->config->get('DB_HOST')) && !empty($this->config->get('DB_NAME')),
                 'Administrador' => !empty($this->config->get('ADMIN_USER')) && !empty($this->config->get('ADMIN_PASS')),
-                'JWT Secret' => !empty($this->config->get('JWT_SECRET')),
+                'JWT Keys' => !empty($this->config->get('JWT_KEYS_CURRENT')),
                 'API Ringover' => !empty($this->config->get('RINGOVER_API_KEY')),
                 'API OpenAI' => !empty($this->config->get('OPENAI_API_KEY')),
                 'API Pipedrive' => !empty($this->config->get('PIPEDRIVE_API_TOKEN'))
@@ -353,13 +353,20 @@
                 <div class="section-title">🔐 Seguridad y JWT</div>
                 <div class="form-row">
                     <div class="form-group">
-                          <label for="JWT_SECRET">Clave Secreta JWT</label>
-                          <input type="password" id="JWT_SECRET" name="JWT_SECRET" placeholder="********" required>
-                        <div class="help-text">Mínimo 32 caracteres para mayor seguridad</div>
+                        <label for="JWT_KID">JWT Key ID</label>
+                        <input type="text" id="JWT_KID" name="JWT_KID" value="<?php echo htmlspecialchars($this->config->get('JWT_KID', 'v1')); ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="JWT_KEYS_CURRENT">Clave JWT actual</label>
+                        <input type="password" id="JWT_KEYS_CURRENT" name="JWT_KEYS_CURRENT" placeholder="********" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="JWT_KEYS_PREVIOUS">Claves JWT previas</label>
+                        <input type="text" id="JWT_KEYS_PREVIOUS" name="JWT_KEYS_PREVIOUS" placeholder="kid1:secret1,kid2:secret2">
                     </div>
                     <div class="form-group">
                         <label for="JWT_EXPIRATION_HOURS">Expiración JWT (horas)</label>
-                        <input type="number" id="JWT_EXPIRATION_HOURS" name="JWT_EXPIRATION_HOURS" 
+                        <input type="number" id="JWT_EXPIRATION_HOURS" name="JWT_EXPIRATION_HOURS"
                                value="<?php echo htmlspecialchars($this->config->get('JWT_EXPIRATION_HOURS', '24')); ?>" required>
                     </div>
                 </div>
@@ -428,17 +435,16 @@
             alert('Función de test de Pipedrive en desarrollo. Token configurado: ' + (token ? 'Sí' : 'No'));
         }
         
-        // Generar JWT Secret automáticamente si está vacío
+        // Generar clave JWT automáticamente si está vacía
         document.addEventListener('DOMContentLoaded', function() {
-            const jwtSecretField = document.getElementById('JWT_SECRET');
-            if (!jwtSecretField.value) {
-                // Generar una clave aleatoria de 64 caracteres
+            const jwtCurrentField = document.getElementById('JWT_KEYS_CURRENT');
+            if (!jwtCurrentField.value) {
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                 let secret = '';
                 for (let i = 0; i < 64; i++) {
                     secret += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
-                jwtSecretField.value = secret;
+                jwtCurrentField.value = secret;
             }
         });
     </script>

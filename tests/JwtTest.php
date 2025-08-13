@@ -13,7 +13,8 @@ class JwtTest extends TestCase
     protected function setUp(): void
     {
         $config = Config::getInstance();
-        $config->set('JWT_SECRET', 'secret');
+        $config->set('JWT_KEYS_CURRENT', 'secret');
+        $config->set('JWT_KID', 'test');
         $config->set('JWT_EXPIRATION_HOURS', '1');
 
         $this->pdo = new PDO('sqlite::memory:');
@@ -36,6 +37,8 @@ class JwtTest extends TestCase
         $jwt = new JWT($this->pdo);
         $token = $jwt->generateToken(['user_id' => 5]);
         $this->assertMatchesRegularExpression('/^[^.]+\.[^.]+\.[^.]+$/', $token);
+        $header = json_decode(base64_decode(explode('.', $token)[0]), true);
+        $this->assertSame('test', $header['kid']);
         $payload = $jwt->validateToken($token);
         $this->assertSame(5, $payload['user_id']);
     }

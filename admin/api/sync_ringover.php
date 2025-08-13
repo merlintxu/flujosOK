@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/init.php';
 
-use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Services\CallService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Core\Request;
 
@@ -66,18 +66,50 @@ if (!function_exists('writeLog')) {
 
 if (!function_exists('parseSince')) {
     function parseSince(string $sinceStr): \DateTimeImmutable {
+        // Allow HTML datetime-local ("Y-m-dTH:i") or "Y-m-d H:i"
+        $sinceStr = str_replace('T', ' ', $sinceStr);
+        $tz = new \DateTimeZone('Europe/Madrid');
         try {
-            // Allow HTML datetime-local ("Y-m-dTH:i") or "Y-m-d H:i"
-            $sinceStr = str_replace('T', ' ', $sinceStr);
-            $tz = new \DateTimeZone('Europe/Madrid');
             return new \DateTimeImmutable($sinceStr, $tz);
         } catch (\Exception $e) {
             writeLog(LOG_LEVEL_ERROR, 'Invalid since parameter', [
                 'since' => $sinceStr,
                 'error' => $e->getMessage(),
             ]);
-            respond_error('Invalid since parameter');
+            throw new \InvalidArgumentException('Invalid since parameter');
         }
+    }
+}
+
+if (!function_exists('collect_params')) {
+    /**
+     * Validate input parameters using filter_var rules without exiting early.
+     *
+     * @param array<string, array{filter:int, required?:bool}> $rules
+     * @return array<string, mixed>
+     */
+    function collect_params(Request $request, array $rules): array {
+        $data = [];
+        foreach ($rules as $name => $opts) {
+            $required = $opts['required'] ?? false;
+            $filter   = $opts['filter']   ?? FILTER_DEFAULT;
+            $value    = $request->post($name);
+            if ($value === null) {
+                $value = $request->get($name);
+            }
+            if ($value === null) {
+                if ($required) {
+                    throw new \InvalidArgumentException("Missing field: $name");
+                }
+                continue;
+            }
+            $filtered = filter_var($value, $filter, ['flags' => FILTER_NULL_ON_FAILURE]);
+            if ($filtered === null && $filter !== FILTER_DEFAULT) {
+                throw new \InvalidArgumentException("Invalid value for $name");
+            }
+            $data[$name] = $filtered ?? $value;
+        }
+        return $data;
     }
 }
 
@@ -86,33 +118,37 @@ writeLog(LOG_LEVEL_INFO, 'Starting Ringover sync process', [
 ]);
 
 // Inicializa servicios y registra en el log
-/** @var RingoverService $ringoverService */
-$ringoverService = $container->resolve(RingoverService::class);
+/** @var CallService $ringoverService */
+$ringoverService = $container->resolve(CallService::class);
 /** @var CallRepository $repo */
 $repo = $container->resolve('callRepository');
 writeLog(LOG_LEVEL_DEBUG, 'RingoverService and CallRepository initialized');
 
 
-// Parameters may be provided via POST body or GET query string
-$params = validate_input($request, [
-    'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
-    'full'     => ['filter' => FILTER_VALIDATE_BOOLEAN],
-    'fields'   => ['filter' => FILTER_UNSAFE_RAW],
-    'since'    => ['filter' => FILTER_UNSAFE_RAW]
-]);
-
-writeLog(LOG_LEVEL_DEBUG, 'Input parameters received', $params);
-
-$download = $params['download'] ?? false;
-$full     = $params['full'] ?? $download;
-$fields   = isset($params['fields']) ? sanitize_string((string)$params['fields']) : null;
-$sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
-$since = parseSince($sinceStr);
+// Initialize defaults
 $inserted = 0;
 $downloads = 0;
 $errors = [];
+$code = 200;
+$response = [];
 
 try {
+    // Parameters may be provided via POST body or GET query string
+    $params = collect_params($request, [
+        'download' => ['filter' => FILTER_VALIDATE_BOOLEAN],
+        'full'     => ['filter' => FILTER_VALIDATE_BOOLEAN],
+        'fields'   => ['filter' => FILTER_UNSAFE_RAW],
+        'since'    => ['filter' => FILTER_UNSAFE_RAW]
+    ]);
+
+    writeLog(LOG_LEVEL_DEBUG, 'Input parameters received', $params);
+
+    $download = $params['download'] ?? false;
+    $full     = $params['full'] ?? $download;
+    $fields   = isset($params['fields']) ? sanitize_string((string)$params['fields']) : null;
+    $sinceStr = sanitize_string((string)($params['since'] ?? '-1 hour'));
+
+    $since = parseSince($sinceStr);
     if ($full || $fields !== null) {
         $calls = $ringoverService->getCalls($since, $full, $fields);
     } else {
@@ -202,21 +238,24 @@ try {
 
     writeLog(LOG_LEVEL_DEBUG, 'Total calls retrieved from Ringover API', ['count' => $retrieved]);
     writeLog(LOG_LEVEL_INFO, 'Sync completed', ['retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads, 'errors' => count($errors)]);
-    $response = ['success' => empty($errors), 'retrieved' => $retrieved, 'inserted' => $inserted, 'downloads' => $downloads];
-    if (!empty($errors)) {
-        $response['errors'] = $errors;
-    }
-    echo json_encode($response);
+    $response = [
+        'success' => empty($errors),
+        'data' => [
+            'retrieved' => $retrieved,
+            'inserted'  => $inserted,
+            'downloads' => $downloads,
+            'errors'    => $errors,
+        ],
+    ];
 } catch (Throwable $e) {
+    $code = $e instanceof \InvalidArgumentException ? 400 : 500;
     writeLog(LOG_LEVEL_ERROR, 'Exception occurred', ['error' => $e->getMessage()]);
-    $errors[] = ['type' => 'exception', 'message' => $e->getMessage()];
-    http_response_code(500);
-    echo json_encode([
-        'success'   => false,
-        'message'   => $e->getMessage(),
-        'retrieved' => $retrieved ?? 0,
-        'inserted'  => $inserted ?? 0,
-        'downloads' => $downloads ?? 0,
-        'errors'    => $errors,
-    ]);
+    $response = [
+        'success' => false,
+        'error'   => $e->getMessage(),
+    ];
+} finally {
+    http_response_code($code);
+    echo json_encode($response);
+    return;
 }

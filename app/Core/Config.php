@@ -143,7 +143,7 @@ class Config
                 'API RINGOVER' => ['RINGOVER_API_URL', 'RINGOVER_API_KEY', 'RINGOVER_WEBHOOK_SECRET', 'RINGOVER_MAX_RECORDING_MB'],
                 'API OPENAI' => ['OPENAI_API_URL', 'OPENAI_API_KEY'],
                 'API PIPEDRIVE' => ['PIPEDRIVE_API_URL', 'PIPEDRIVE_API_TOKEN'],
-                'SEGURIDAD Y JWT' => ['JWT_SECRET', 'JWT_EXPIRATION_HOURS', 'APP_ENV', 'APP_DEBUG'],
+                'SEGURIDAD Y JWT' => ['JWT_KID', 'JWT_KEYS_CURRENT', 'JWT_KEYS_PREVIOUS', 'JWT_EXPIRATION_HOURS', 'APP_ENV', 'APP_DEBUG'],
                 'CONFIGURACIÓN DE API' => ['MAX_API_REQUESTS_PER_HOUR', 'API_TIMEOUT', 'API_LOG_LEVEL', 'RATE_LIMIT_ENABLED'],
                 'CONFIGURACIÓN DE SISTEMA' => ['TIMEZONE', 'LOG_RETENTION_DAYS', 'BACKUP_RETENTION_DAYS', 'MAX_UPLOAD_SIZE', 'CACHE_ENABLED', 'CACHE_TTL', 'SESSION_LIFETIME']
             ];
@@ -242,7 +242,9 @@ class Config
     public function getJwtConfig()
     {
         return [
-            'secret' => $this->get('JWT_SECRET', ''),
+            'current_key'   => $this->get('JWT_KEYS_CURRENT', $this->get('JWT_SECRET', '')),
+            'previous_keys' => $this->get('JWT_KEYS_PREVIOUS', ''),
+            'kid'           => $this->get('JWT_KID', 'default'),
             'expiration_hours' => (int)$this->get('JWT_EXPIRATION_HOURS', 24),
             'algorithm' => 'HS256'
         ];
@@ -256,7 +258,7 @@ class Config
         $required = [
             'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS',
             'ADMIN_USER', 'ADMIN_PASS',
-            'JWT_SECRET'
+            'JWT_KID', 'JWT_KEYS_CURRENT'
         ];
         
         $missing = [];

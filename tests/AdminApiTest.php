@@ -13,7 +13,8 @@ class AdminApiTest extends TestCase
 
     protected function setUp(): void
     {
-        $_ENV['JWT_SECRET'] = 'secret';
+        $_ENV['JWT_KEYS_CURRENT'] = 'secret';
+        $_ENV['JWT_KID'] = 'test';
         $this->container = new Container();
 
         $this->container->instance('analyticsService', new class {

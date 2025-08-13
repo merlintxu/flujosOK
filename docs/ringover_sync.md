@@ -57,3 +57,17 @@ analizados se restablece a `0`.
    columna `voicemail_url` y el campo `pending_analysis`.
 2. Ejecutar `phpunit` para validar los cambios.
 3. Configurar los flujos de n8n con parámetros `page` y `limit`.
+
+## Ejemplos de uso con curl
+
+Autenticando una sesión en `localhost` con cookie `PHPSESSID=test` y token CSRF `tok`:
+
+```bash
+# Sincronización básica
+curl -H "Cookie: PHPSESSID=test" -H "X-Correlation-Id: demo" \\
+     -d "csrf_token=tok" http://localhost:8000/api/sync_ringover.php
+
+# Ejemplo con error de validación
+curl -H "Cookie: PHPSESSID=test" -H "X-Correlation-Id: demo" \\
+     -d "csrf_token=tok&download=abc" http://localhost:8000/api/sync_ringover.php
+```

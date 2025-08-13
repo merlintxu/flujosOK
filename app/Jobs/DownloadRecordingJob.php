@@ -1,7 +1,7 @@
 <?php
 namespace FlujosDimension\Jobs;
 
-use FlujosDimension\Services\RingoverService;
+use FlujosDimension\Services\CallService;
 use FlujosDimension\Repositories\CallRepository;
 use FlujosDimension\Repositories\AsyncTaskRepository;
 use FlujosDimension\Support\Validator;
@@ -10,7 +10,7 @@ use FlujosDimension\Core\Config;
 class DownloadRecordingJob implements JobInterface
 {
     public function __construct(
-        private RingoverService $ringover,
+        private CallService $ringover,
         private CallRepository $calls,
         private AsyncTaskRepository $tasks
     ) {}
