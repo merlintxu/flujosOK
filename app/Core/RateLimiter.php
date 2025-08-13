@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace FlujosDimension\Core;
 
 use PDO;
+use PDOException;
 
 /**
  * Rate limiter using token bucket algorithm
@@ -12,15 +13,48 @@ final class RateLimiter
 {
     private PDO $db;
     private array $config;
+    private bool $passthrough = false;
+    private ?Logger $logger;
 
-    public function __construct(PDO $db, array $config = [])
+    public function __construct(PDO $db, array $config = [], ?Logger $logger = null)
     {
         $this->db = $db;
+        $this->logger = $logger;
         $this->config = array_merge([
             'default_capacity' => 100,
             'default_refill_rate' => 10, // tokens per second
             'cleanup_interval' => 3600, // 1 hour
         ], $config);
+
+        $this->checkTables();
+    }
+
+    private function checkTables(): void
+    {
+        $required = ['rate_limit_buckets', 'rate_limit_logs'];
+        $missing = [];
+
+        foreach ($required as $table) {
+            try {
+                $stmt = $this->db->prepare(
+                    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table'
+                );
+                $stmt->execute([':table' => $table]);
+                if (!$stmt->fetchColumn()) {
+                    $missing[] = $table;
+                }
+            } catch (PDOException $e) {
+                $missing = $required;
+                break;
+            }
+        }
+
+        if ($missing) {
+            $this->passthrough = true;
+            $this->logger?->warning('RateLimiter: passthrough=true', ['missing_tables' => $missing]);
+        } else {
+            $this->logger?->info('RateLimiter: passthrough=false');
+        }
     }
 
     /**
@@ -33,6 +67,17 @@ final class RateLimiter
      */
     public function isAllowed(string $key, int $tokens = 1, array $limits = []): array
     {
+        if ($this->passthrough) {
+            $capacity = $limits['capacity'] ?? $this->config['default_capacity'];
+            return [
+                'allowed' => true,
+                'remaining' => $capacity,
+                'reset_time' => time(),
+                'capacity' => $capacity,
+                'refill_rate' => $limits['refill_rate'] ?? $this->config['default_refill_rate']
+            ];
+        }
+
         $capacity = $limits['capacity'] ?? $this->getCapacityForKey($key);
         $refillRate = $limits['refill_rate'] ?? $this->getRefillRateForKey($key);
         
@@ -74,16 +119,30 @@ final class RateLimiter
      */
     public function getStatus(string $key): array
     {
+        if ($this->passthrough) {
+            $capacity = $this->config['default_capacity'];
+            $refillRate = $this->config['default_refill_rate'];
+            $now = time();
+            return [
+                'key' => $key,
+                'tokens' => $capacity,
+                'capacity' => $capacity,
+                'refill_rate' => $refillRate,
+                'last_refill' => $now,
+                'reset_time' => $now
+            ];
+        }
+
         $capacity = $this->getCapacityForKey($key);
         $refillRate = $this->getRefillRateForKey($key);
         $now = time();
-        
+
         $bucket = $this->getBucket($key, $capacity, $now);
-        
+
         // Calculate current tokens
         $timeDiff = $now - $bucket['last_refill'];
         $currentTokens = min($capacity, $bucket['tokens'] + ($timeDiff * $refillRate));
-        
+
         return [
             'key' => $key,
             'tokens' => (int)$currentTokens,
@@ -99,6 +158,10 @@ final class RateLimiter
      */
     public function reset(string $key): void
     {
+        if ($this->passthrough) {
+            return;
+        }
+
         $stmt = $this->db->prepare('DELETE FROM rate_limit_buckets WHERE bucket_key = :key');
         $stmt->execute([':key' => $key]);
     }
@@ -108,6 +171,10 @@ final class RateLimiter
      */
     public function getAllBuckets(): array
     {
+        if ($this->passthrough) {
+            return [];
+        }
+
         $stmt = $this->db->query('SELECT * FROM rate_limit_buckets ORDER BY last_refill DESC');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -117,6 +184,10 @@ final class RateLimiter
      */
     public function cleanup(): int
     {
+        if ($this->passthrough) {
+            return 0;
+        }
+
         $cutoff = time() - $this->config['cleanup_interval'];
         $stmt = $this->db->prepare('DELETE FROM rate_limit_buckets WHERE last_refill < :cutoff');
         $stmt->execute([':cutoff' => $cutoff]);

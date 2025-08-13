@@ -13,8 +13,16 @@ cp .env.example .env
    `RINGOVER_API_KEY`, `PIPEDRIVE_API_TOKEN`, `OPENAI_API_KEY`.
    Also set `JWT_SECRET`. The value of `ADMIN_PASS` should be generated
    with `password_hash`.
-3. **Import the database schema** located in `database/flujodimen_db.sql` into your MySQL/MariaDB server. The
-   `api_tokens` table now stores a `token_hash` column instead of the raw token.
+3. **Import the database schema** located in `database/flujodimen_db.sql` into your MySQL/MariaDB server and
+   then run the SQL scripts in `database/migrations/` to create the rate limiting and webhook deduplication
+   tables.
+   ```bash
+   mysql -u root -p < database/flujodimen_db.sql
+   for f in database/migrations/*.sql; do
+       mysql -u root -p your_database < "$f"
+   done
+   ```
+   The `api_tokens` table now stores a `token_hash` column instead of the raw token.
 4. **Launch the built-in PHP web server** for local testing.
    ```bash
    php -S localhost:8000 -t public
@@ -28,6 +36,14 @@ cp .env.example .env
    tail -f storage/logs/error.log
    ```
    You can periodically clean old rotated logs using `Logger::cleanOldLogs()`.
+
+7. **Enable database cleanup events** for rate limit logs and webhook deduplication. Run the migration
+   `database/migrations/006_cleanup_events.sql` and ensure the MySQL event scheduler is active:
+   ```sql
+   SET GLOBAL event_scheduler = ON;
+   ```
+   The cleanup TTLs (default 7 and 30 days) can be overridden by setting `@dedup_ttl_days` and
+   `@rate_limit_log_ttl_days` before executing the migration.
 
 
 ## Docker
