@@ -143,10 +143,20 @@ class Container
      */
     private function resolveDependency(ReflectionParameter $parameter)
     {
-        // Si tiene un tipo de clase, resolverlo
-        if ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
-            $className = $parameter->getType()->getName();
-            return $this->resolve($className);
+        $type = $parameter->getType();
+        if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+            return $this->resolve($type->getName());
+        }
+        if ($type instanceof \ReflectionUnionType) {
+            foreach ($type->getTypes() as $named) {
+                if (!$named->isBuiltin()) {
+                    try {
+                        return $this->resolve($named->getName());
+                    } catch (\Throwable $e) {
+                        continue;
+                    }
+                }
+            }
         }
         
         // Si tiene valor por defecto, usarlo

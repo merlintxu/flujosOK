@@ -5,6 +5,7 @@ namespace FlujosDimension\Core;
 
 use Exception;
 use RuntimeException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Retry strategy with exponential backoff and jitter
@@ -17,6 +18,7 @@ final class RetryStrategy
     private float $jitterFactor;
     private array $retryableStatusCodes;
     private array $retryableExceptions;
+    private ?LoggerInterface $logger;
 
     public function __construct(
         int $maxAttempts = 3,
@@ -24,7 +26,8 @@ final class RetryStrategy
         int $maxDelayMs = 30000,
         float $jitterFactor = 0.1,
         array $retryableStatusCodes = [429, 500, 502, 503, 504],
-        array $retryableExceptions = [RuntimeException::class]
+        array $retryableExceptions = [RuntimeException::class],
+        ?LoggerInterface $logger = null
     ) {
         $this->maxAttempts = max(1, $maxAttempts);
         $this->baseDelayMs = max(100, $baseDelayMs);
@@ -32,6 +35,7 @@ final class RetryStrategy
         $this->jitterFactor = max(0.0, min(1.0, $jitterFactor));
         $this->retryableStatusCodes = $retryableStatusCodes;
         $this->retryableExceptions = $retryableExceptions;
+        $this->logger = $logger;
     }
 
     /**
@@ -156,15 +160,7 @@ final class RetryStrategy
             'correlation_id' => $correlationId
         ];
 
-        error_log(sprintf(
-            'Retry attempt %d/%d for %s (delay: %dms): %s [correlation_id: %s]',
-            $attempt,
-            $this->maxAttempts,
-            $operationName ?? 'operation',
-            $delayMs,
-            $e->getMessage(),
-            $correlationId ?? 'none'
-        ));
+        $this->logger?->warning('retry_attempt', $context);
     }
 
     /**
@@ -172,12 +168,12 @@ final class RetryStrategy
      */
     private function logRetrySuccess(?string $operationName, int $attempt, ?string $correlationId): void
     {
-        error_log(sprintf(
-            'Retry successful for %s on attempt %d [correlation_id: %s]',
-            $operationName ?? 'operation',
-            $attempt,
-            $correlationId ?? 'none'
-        ));
+        $context = [
+            'operation' => $operationName ?? 'unknown',
+            'attempt' => $attempt,
+            'correlation_id' => $correlationId
+        ];
+        $this->logger?->info('retry_success', $context);
     }
 
     /**
@@ -185,12 +181,11 @@ final class RetryStrategy
      */
     private function logNonRetryableError(?string $operationName, Exception $e, ?string $correlationId): void
     {
-        error_log(sprintf(
-            'Non-retryable error for %s: %s [correlation_id: %s]',
-            $operationName ?? 'operation',
-            $e->getMessage(),
-            $correlationId ?? 'none'
-        ));
+        $context = [
+            'operation' => $operationName ?? 'unknown',
+            'correlation_id' => $correlationId
+        ];
+        $this->logger?->error('non_retryable_error', $context + ['error' => $e->getMessage()]);
     }
 
     /**
@@ -202,19 +197,18 @@ final class RetryStrategy
         Exception $e,
         ?string $correlationId
     ): void {
-        error_log(sprintf(
-            'Max retry attempts (%d) reached for %s: %s [correlation_id: %s]',
-            $attempts,
-            $operationName ?? 'operation',
-            $e->getMessage(),
-            $correlationId ?? 'none'
-        ));
+        $context = [
+            'operation' => $operationName ?? 'unknown',
+            'attempts' => $attempts,
+            'correlation_id' => $correlationId
+        ];
+        $this->logger?->error('max_retry_attempts', $context + ['error' => $e->getMessage()]);
     }
 
     /**
      * Create a retry strategy for API calls
      */
-    public static function forApiCalls(): self
+    public static function forApiCalls(?LoggerInterface $logger = null): self
     {
         return new self(
             maxAttempts: 3,
@@ -222,14 +216,15 @@ final class RetryStrategy
             maxDelayMs: 10000,
             jitterFactor: 0.1,
             retryableStatusCodes: [429, 500, 502, 503, 504],
-            retryableExceptions: [RuntimeException::class]
+            retryableExceptions: [RuntimeException::class],
+            logger: $logger
         );
     }
 
     /**
      * Create a retry strategy for critical operations
      */
-    public static function forCriticalOperations(): self
+    public static function forCriticalOperations(?LoggerInterface $logger = null): self
     {
         return new self(
             maxAttempts: 5,
@@ -237,14 +232,15 @@ final class RetryStrategy
             maxDelayMs: 30000,
             jitterFactor: 0.2,
             retryableStatusCodes: [429, 500, 502, 503, 504],
-            retryableExceptions: [RuntimeException::class]
+            retryableExceptions: [RuntimeException::class],
+            logger: $logger
         );
     }
 
     /**
      * Create a retry strategy for background jobs
      */
-    public static function forBackgroundJobs(): self
+    public static function forBackgroundJobs(?LoggerInterface $logger = null): self
     {
         return new self(
             maxAttempts: 3,
@@ -252,7 +248,8 @@ final class RetryStrategy
             maxDelayMs: 60000,
             jitterFactor: 0.3,
             retryableStatusCodes: [429, 500, 502, 503, 504],
-            retryableExceptions: [RuntimeException::class]
+            retryableExceptions: [RuntimeException::class],
+            logger: $logger
         );
     }
 }

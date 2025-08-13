@@ -104,9 +104,12 @@ private function registerServices(): void
     $this->container->alias(JWT::class, 'jwtService');
 
     /* ---------- Logger ---------- */
-    $this->container->singleton('logger', fn () =>
-        new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs')
+    $this->container->singleton(
+        'logger',
+        fn () => new \FlujosDimension\Core\Logger(dirname(__DIR__, 2) . '/storage/logs', \Psr\Log\LogLevel::INFO, $this->request)
     );
+    $this->container->alias('logger', \Psr\Log\LoggerInterface::class);
+    $this->container->alias('logger', \FlujosDimension\Core\Logger::class);
 
     /* ---------- HttpClient (Guzzle + retry) ---------- */
     $this->container->singleton(
@@ -237,7 +240,8 @@ private function registerServices(): void
         fn ($c) => new \FlujosDimension\Jobs\TranscriptionJob(
             $c->resolve('callRepository'),
             $c->resolve(\FlujosDimension\Infrastructure\Http\OpenAIClient::class),
-            $c->resolve('asyncTaskRepository')
+            $c->resolve('asyncTaskRepository'),
+            $c->resolve('logger')
         )
     );
 
@@ -245,7 +249,8 @@ private function registerServices(): void
         \FlujosDimension\Jobs\CRMSyncJob::class,
         fn ($c) => new \FlujosDimension\Jobs\CRMSyncJob(
             $c->resolve('callRepository'),
-            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class)
+            $c->resolve(\FlujosDimension\Infrastructure\Http\PipedriveClient::class),
+            $c->resolve('logger')
         )
     );
 
