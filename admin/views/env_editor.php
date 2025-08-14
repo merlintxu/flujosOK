@@ -1,3 +1,9 @@
+<?php
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+$success = $success ?? ($_SESSION['flash_success'] ?? null);
+$error   = $error   ?? ($_SESSION['flash_error']   ?? null);
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -218,13 +224,13 @@
     </div>
 
     <div class="container">
-        <?php if ($success): ?>
+        <?php if (!empty($success)): ?>
             <div class="alert alert-success">
                 ✅ <?php echo htmlspecialchars($success); ?>
             </div>
         <?php endif; ?>
         
-        <?php if ($error): ?>
+        <?php if (!empty($error)):   ?>
             <div class="alert alert-error">
                 ❌ <?php echo htmlspecialchars($error); ?>
             </div>

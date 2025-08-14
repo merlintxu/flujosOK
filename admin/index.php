@@ -9,10 +9,58 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 require_once __DIR__ . '/auth.php';
-
-requireLogin();
+require_once dirname(__DIR__, 1) . '/app/Services/JwtKeyService.php';
+use FlujosDimension\Controllers\JwtController;
+$jwtController = new JwtController();
 
 $action = $_GET['action'] ?? '';
+
+requireLogin();
+require_once dirname(__DIR__, 1) . '/app/Services/JwtKeyService.php';
+require_once __DIR__ . '/controllers/JwtController.php';
+$jwtController = new JwtController();
+$action = $_GET['action'] ?? '';
+/* ---- Rutas Gestor JWS/JWT ---- */
+if ($action === 'jwt') {
+    // Panel principal del gestor JWT
+    $jwtController->index();
+    exit;
+}
+
+if ($action === 'jwt.generate') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo "Método no permitido"; exit;
+    }
+    $jwtController->generate();
+    exit;
+}
+
+if ($action === 'jwt.import') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo "Método no permitido"; exit;
+    }
+    $jwtController->importPem();
+    exit;
+}
+
+if ($action === 'jwt.rotate') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo "Método no permitido"; exit;
+    }
+    $jwtController->rotate();
+    exit;
+}
+
+if ($action === 'jwt.jwks') {
+    // Endpoint público JWKS (si prefieres, muévelo fuera del admin)
+    $jwtController->serveJwks();
+    exit;
+}
+/* ---- Fin rutas JWT ---- */
+
 if ($action === 'env_editor') {
     $config = \FlujosDimension\Core\Config::getInstance();
     $success = null;
