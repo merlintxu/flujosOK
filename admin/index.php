@@ -42,9 +42,11 @@ if (function_exists('requireLogin')) { requireLogin(); }
 // Imports PSR-4
 // -----------------------------------------------------------------------------
 use FlujosDimension\Controllers\JwtController;
+use FlujosDimension\Controllers\Admin\SyncController;
 
-// Instancia del Gestor JWT (rutas base para vistas/keys)
-$jwt = new JwtController($PROJECT_ROOT, __DIR__);
+// Instancia de controladores
+$jwt  = new JwtController($PROJECT_ROOT, __DIR__);
+$sync = new SyncController($PROJECT_ROOT, __DIR__);
 
 // -----------------------------------------------------------------------------
 // Helpers de render y utilidades
@@ -178,6 +180,17 @@ try {
         }
         case 'jwt.jwks': {          // GET
             $jwt->serveJwks();
+            break;
+        }
+
+        // ------------------------ Sincronizar ------------------------
+        case 'sync': {
+            $sync->index();
+            break;
+        }
+        case 'sync.run': {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') { method_not_allowed(); break; }
+            $sync->run();
             break;
         }
 
