@@ -1,25 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true" failOnWarning="false" failOnDeprecation="false">
+<phpunit
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+  bootstrap="tests/bootstrap.php"
+  colors="true"
+  failOnWarning="false"
+  failOnDeprecation="false">
+
   <testsuites>
-    <testsuite name="unit"><directory>tests/Unit</directory></testsuite>
-    <testsuite name="integration"><directory>tests/Integration</directory></testsuite>
+    <testsuite name="all">
+      <!-- Todos los tests que vivan en /tests -->
+      <directory suffix="Test.php">tests</directory>
+      <!-- Si tienes tests que no terminan en *Test.php, descomenta:
+      <directory suffix=".php">tests</directory>
+      -->
+    </testsuite>
   </testsuites>
-    <php>
-    <env name="DB_HOST" value="localhost"/>
-    <env name="DB_NAME" value="testdb"/>
-    <env name="DB_USER" value="user"/>
-    <env name="DB_PASS" value="pass"/>
-    <env name="ADMIN_USER" value="admin"/>
-    <env name="ADMIN_PASS" value="secret"/>
-    <env name="JWT_KEYS_CURRENT" value="key"/>
-    <env name="JWT_KID" value="test"/>
+
+  <!-- OJO: no ponemos secretos aquí; los cargará tests/bootstrap.php desde .env/.env.testing -->
+  <php>
+    <!-- Útiles para modo prueba; si ya vienen del .env, se sobreescriben ahí -->
+    <env name="APP_ENV" value="testing"/>
   </php>
+
+  <!-- PHPUnit 11 usa <source> para cobertura -->
   <source>
     <include>
       <directory>app</directory>
     </include>
     <exclude>
       <directory>tests</directory>
+      <directory>vendor</directory>
+      <directory>storage</directory>
+      <directory>public</directory>
+      <directory>admin/views</directory>
+      <file>admin/index.php</file>
     </exclude>
   </source>
 </phpunit>
